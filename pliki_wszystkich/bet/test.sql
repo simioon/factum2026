@@ -8,7 +8,7 @@ CREATE TABLE uzytkownicy (
     imie_nazwisko VARCHAR(100) NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
     stanowisko CHAR(1) CHECK (stanowisko IN ('A', 'B', 'C')), -- NULL to dyrektor generalny
-    aktualny_stopien_sluzbowy INT CHECK (aktualny_stopien_sluzbowy BETWEEN 0 AND 9),
+    aktualny_stopien_sluzbowy INT NOT NULL DEFAULT 0 CHECK (aktualny_stopien_sluzbowy BETWEEN 0 AND 9),
     przelozony_id INT REFERENCES uzytkownicy(id) ON DELETE SET NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
