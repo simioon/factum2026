@@ -1,0 +1,3027 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cyfrowy Asystent Ocen Okresowych — Służba Cywilna (HackNation 2026)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    /* ==========================================================================
+       SEKCJA CSS 1: ZMIENNE KOLORÓW I PODSTAWOWE STYLE
+       (Zespół może tu łatwo zmienić całą kolorystykę aplikacji)
+       ========================================================================== */
+    :root {
+      --bg-page: #f8f9fa;
+      --bg-card: #ffffff;
+      --bg-subtle: #f1f5f9;
+      --border-color: #dde3ea;
+      --text-main: #1e293b;
+      --text-muted: #64748b;
+
+      --primary: #1e3a5f;
+      --primary-hover: #152b47;
+      --primary-light: #e8eef5;
+
+      --positive: #16a34a;
+      --positive-bg: #dcfce7;
+      --positive-border: #86efac;
+
+      --negative: #dc2626;
+      --negative-bg: #fee2e2;
+      --negative-border: #fca5a5;
+
+      --warning: #d97706;
+      --warning-bg: #fef3c7;
+      --warning-border: #fcd34d;
+
+      --wellbeing: #7c3aed;
+      --wellbeing-bg: #f3e8ff;
+      --wellbeing-border: #d8b4fe;
+
+      --radius: 8px;
+      --shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--bg-page);
+      color: var(--text-main);
+      line-height: 1.5;
+      font-size: 14px;
+    }
+
+    /* ==========================================================================
+       SEKCJA CSS 2: UKŁAD, PASEK GÓRNY I KARTY
+       ========================================================================== */
+    .topbar {
+      background-color: var(--primary);
+      color: #ffffff;
+      padding: 12px 24px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .topbar-brand {
+      font-weight: 700;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .topbar-brand span.badge-year {
+      background: rgba(255, 255, 255, 0.18);
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 99px;
+      font-weight: 500;
+    }
+
+    .topbar-controls {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .topbar-controls label {
+      font-size: 12px;
+      opacity: 0.85;
+    }
+
+    .topbar-controls select {
+      padding: 6px 10px;
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      background: #ffffff;
+      color: var(--text-main);
+      font-size: 13px;
+      font-family: inherit;
+      width: auto;
+    }
+
+    .container {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 24px 16px 60px;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 16px;
+      box-shadow: var(--shadow);
+    }
+
+    .card-header {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    h1 { font-size: 22px; font-weight: 700; color: var(--primary); margin-bottom: 6px; }
+    h2 { font-size: 18px; font-weight: 700; color: var(--primary); }
+    h3 { font-size: 15px; font-weight: 600; color: var(--text-main); margin-bottom: 8px; }
+    .text-muted { color: var(--text-muted); font-size: 13px; }
+
+    .hidden { display: none !important; }
+
+    /* Siatki pomocnicze */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 16px;
+    }
+
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 14px;
+    }
+
+    /* ==========================================================================
+       SEKCJA CSS 3: PRZYCISKI, ZAKŁADKI, FORMULARZE I ETYKIETY (BADGES)
+       ========================================================================== */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 8px 14px;
+      border-radius: 6px;
+      border: 1px solid var(--border-color);
+      background: #ffffff;
+      color: var(--text-main);
+      font-size: 13px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    .btn:hover { background: var(--bg-subtle); }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #ffffff;
+      border-color: var(--primary);
+    }
+    .btn-primary:hover { background: var(--primary-hover); }
+
+    .btn-positive {
+      background: var(--positive);
+      color: #ffffff;
+      border-color: var(--positive);
+    }
+    .btn-positive:hover { opacity: 0.92; }
+
+    .btn-negative {
+      background: var(--negative);
+      color: #ffffff;
+      border-color: var(--negative);
+    }
+    .btn-negative:hover { opacity: 0.92; }
+
+    .btn-sm { padding: 5px 10px; font-size: 12px; }
+
+    .tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 18px;
+      border-bottom: 2px solid var(--border-color);
+      padding-bottom: 8px;
+    }
+
+    .tab-btn {
+      padding: 8px 16px;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      background: transparent;
+      color: var(--text-muted);
+      font-weight: 600;
+      font-size: 13px;
+      font-family: inherit;
+      cursor: pointer;
+    }
+
+    .tab-btn:hover { background: var(--bg-subtle); color: var(--text-main); }
+    .tab-btn.active {
+      background: var(--primary);
+      color: #ffffff;
+    }
+
+    .form-group { margin-bottom: 14px; }
+    .form-group label {
+      display: block;
+      font-weight: 600;
+      font-size: 13px;
+      margin-bottom: 5px;
+      color: var(--text-main);
+    }
+
+    input[type="text"],
+    input[type="date"],
+    input[type="number"],
+    select,
+    textarea {
+      width: 100%;
+      padding: 8px 11px;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 13px;
+      color: var(--text-main);
+      background: #ffffff;
+    }
+
+    textarea { resize: vertical; min-height: 75px; }
+
+    /* Badges & Tagi */
+    .badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 99px;
+      font-size: 11px;
+      font-weight: 600;
+      border: 1px solid var(--border-color);
+      background: var(--bg-subtle);
+      color: var(--text-main);
+    }
+
+    .badge-primary { background: var(--primary-light); color: var(--primary); border-color: #c5d5e8; }
+    .badge-positive { background: var(--positive-bg); color: var(--positive); border-color: var(--positive-border); }
+    .badge-negative { background: var(--negative-bg); color: var(--negative); border-color: var(--negative-border); }
+    .badge-warning { background: var(--warning-bg); color: var(--warning); border-color: var(--warning-border); }
+    .badge-wellbeing { background: var(--wellbeing-bg); color: var(--wellbeing); border-color: var(--wellbeing-border); }
+
+    /* Ramki informacyjne / Alerty */
+    .alert-box {
+      padding: 12px 14px;
+      border-radius: 6px;
+      border: 1px solid var(--border-color);
+      margin-bottom: 12px;
+      font-size: 13px;
+    }
+    .alert-info { background: var(--primary-light); border-color: #bfd2e8; color: var(--primary); }
+    .alert-warning { background: var(--warning-bg); border-color: var(--warning-border); color: #92400e; }
+    .alert-negative { background: var(--negative-bg); border-color: var(--negative-border); color: #991b1b; }
+    .alert-positive { background: var(--positive-bg); border-color: var(--positive-border); color: #166534; }
+    .alert-wellbeing { background: var(--wellbeing-bg); border-color: var(--wellbeing-border); color: #5b21b6; }
+
+    /* ==========================================================================
+       SEKCJA CSS 4: ELEMENTY SPECYFICZNE (LOGOWANIE, TIMELINE, TAGI, WIZARD)
+       ========================================================================== */
+    .login-card {
+      cursor: pointer;
+      transition: border-color 0.15s, transform 0.15s;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .login-card:hover {
+      border-color: var(--primary);
+      transform: translateY(-2px);
+    }
+
+    /* Oś czasu (Timeline) */
+    .timeline {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 10px;
+    }
+    .timeline-step {
+      flex: 1 1 180px;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-color);
+      border-top: 3px solid var(--primary);
+      border-radius: 6px;
+      padding: 12px;
+    }
+    .timeline-step.urgent { border-top-color: var(--negative); }
+    .timeline-step.done { border-top-color: var(--positive); }
+    .timeline-date { font-weight: 700; color: var(--primary); font-size: 13px; margin-bottom: 4px; }
+
+    /* Tabele */
+    .table-wrap { overflow-x: auto; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    th, td {
+      text-align: left;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border-color);
+      vertical-align: top;
+    }
+    th {
+      background: var(--bg-subtle);
+      font-weight: 600;
+      color: var(--primary);
+    }
+
+    /* Dziennik zadań i tagów */
+    .task-item {
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 14px;
+      margin-bottom: 12px;
+      background: #ffffff;
+    }
+    .task-tags-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin: 10px 0;
+    }
+    .tag-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 13px;
+    }
+    .tag-row.pos { background: var(--positive-bg); border: 1px solid var(--positive-border); }
+    .tag-row.neg { background: var(--negative-bg); border: 1px solid var(--negative-border); }
+    .tag-row.wellbeing { background: var(--wellbeing-bg); border: 1px solid var(--wellbeing-border); }
+
+    .inline-tag-form {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px dashed var(--border-color);
+    }
+    .inline-tag-form select { flex: 1 1 170px; }
+    .inline-tag-form input[type="text"] { flex: 2 1 200px; }
+
+    /* Kreator Oceny (Wizard) */
+    .progress-bar-bg {
+      width: 100%;
+      height: 8px;
+      background: var(--bg-subtle);
+      border-radius: 99px;
+      overflow: hidden;
+      margin: 10px 0 4px;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      background: var(--primary);
+      transition: width 0.25s ease;
+    }
+
+    .criterion-desc-list {
+      margin: 8px 0 14px 20px;
+      color: var(--text-main);
+    }
+    .criterion-desc-list li { margin-bottom: 4px; }
+
+    .score-options {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 8px;
+      margin: 12px 0;
+    }
+    .score-radio-label {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 10px;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      cursor: pointer;
+      background: #ffffff;
+    }
+    .score-radio-label:hover { background: var(--bg-subtle); }
+    .score-radio-label.selected {
+      border-color: var(--primary);
+      background: var(--primary-light);
+    }
+
+    /* ==========================================================================
+       SEKCJA CSS 5: SPLIT SCREEN (UZASADNIENIE + KLOCKI DOWODOWE) I PIGUŁKI IPRZ
+       ========================================================================== */
+    .split-screen {
+      display: grid;
+      grid-template-columns: 1.15fr 1fr;
+      gap: 18px;
+      align-items: start;
+      margin: 18px 0;
+    }
+
+    @media (max-width: 820px) {
+      .split-screen {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .split-panel {
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 14px;
+      background: var(--bg-subtle);
+    }
+
+    .draft-btn-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin: 8px 0 10px;
+    }
+
+    .evidence-filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin: 8px 0 10px;
+    }
+
+    .filter-btn {
+      padding: 4px 10px;
+      border-radius: 99px;
+      border: 1px solid var(--border-color);
+      background: #ffffff;
+      color: var(--text-main);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .filter-btn.active {
+      background: var(--primary);
+      color: #ffffff;
+      border-color: var(--primary);
+    }
+
+    .evidence-scroll-list {
+      max-height: 330px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding-right: 4px;
+    }
+
+    .evidence-card {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 10px;
+      border-radius: 6px;
+      background: #ffffff;
+      border: 1px solid var(--border-color);
+      border-left: 4px solid var(--border-color);
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .evidence-card:hover { background: #fcfdff; }
+    .evidence-card.pos { border-left-color: var(--positive); }
+    .evidence-card.neg { border-left-color: var(--negative); }
+    .evidence-card.wellbeing { border-left-color: var(--wellbeing); }
+    .evidence-card.checked {
+      background: var(--primary-light);
+      border-color: #9ab5d6;
+    }
+    .evidence-card input[type="checkbox"] {
+      margin-top: 3px;
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    /* Klikalne pigułki IPRZ */
+    .iprz-pills-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 8px 0 10px;
+    }
+
+    .iprz-pill {
+      padding: 6px 12px;
+      border-radius: 99px;
+      border: 1px solid #bfd2e8;
+      background: var(--primary-light);
+      color: var(--primary);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.15s, color 0.15s;
+    }
+    .iprz-pill:hover {
+      background: var(--primary);
+      color: #ffffff;
+    }
+    .iprz-pill.used {
+      background: var(--positive-bg);
+      border-color: var(--positive-border);
+      color: var(--positive);
+    }
+
+    /* Powiadomienie Toast (zamiast alert()) */
+    #toast-container {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .toast {
+      background: var(--primary);
+      color: #ffffff;
+      padding: 10px 16px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+    .toast.success { background: var(--positive); }
+    .toast.error { background: var(--negative); }
+
+    /* ==========================================================================
+       SEKCJA CSS 6: WIDOK WYDRUKU / EKSPORTU PDF (@media print)
+       ========================================================================== */
+    #print-sheet-area { display: none; }
+
+    @media print {
+      body { background: #ffffff; color: #000000; }
+      .topbar, #app-main, #toast-container { display: none !important; }
+      #print-sheet-area {
+        display: block !important;
+        padding: 10px;
+        font-size: 12px;
+      }
+      #print-sheet-area table { border: 1px solid #000; margin: 12px 0; }
+      #print-sheet-area th, #print-sheet-area td { border: 1px solid #000; padding: 6px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ========================================================================
+       SEKCJA HTML 1: PASEK GÓRNY (NAWIGACJA I SZYBKI PRZEŁĄCZNIK RÓL)
+       ======================================================================== -->
+  <header class="topbar">
+    <div class="topbar-brand">
+      <span>Cyfrowy Asystent Ocen Okresowych</span>
+      <span class="badge-year">Służba Cywilna &bull; HackNation 2026</span>
+    </div>
+    <div class="topbar-controls">
+      <label for="quick-role-select">Przełącz rolę (Demo):</label>
+      <select id="quick-role-select" onchange="switchUserById(this.value)">
+        <!-- Wypełniane dynamicznie z JS -->
+      </select>
+      <button id="btn-logout" class="btn btn-sm hidden" onclick="logout()">Ekran startowy</button>
+    </div>
+  </header>
+
+  <!-- GŁÓWNY KONTENER APLIKACJI -->
+  <main id="app-main" class="container">
+
+    <!-- ======================================================================
+         SEKCJA HTML 2: EKRAN LOGOWANIA (WYBÓR KONTA DEMO)
+         ====================================================================== -->
+    <section id="section-login">
+      <div class="card">
+        <h1>Cyfrowy Asystent Ocen Okresowych w Służbie Cywilnej</h1>
+        <p class="text-muted" style="margin-bottom: 18px;">
+          Wybierz jedną z ról demonstracyjnych poniżej (bez hasła), aby przetestować cały obieg oceny okresowej — od rozmowy wstępnej i dziennika tagów, po kreator oceny ze „Split Screenem” uzasadnienia i rozpatrywanie odwołań.
+        </p>
+        <div id="login-cards-grid" class="grid-4">
+          <!-- Renderowane z JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================================
+         SEKCJA HTML 3: PANEL OCENIANEGO (PRACOWNIKA)
+         ====================================================================== -->
+    <section id="section-employee" class="hidden">
+      <div id="employee-view-content"></div>
+    </section>
+
+    <!-- ======================================================================
+         SEKCJA HTML 4: PANEL OCENIAJĄCEGO (MANAGERA)
+         ====================================================================== -->
+    <section id="section-manager" class="hidden">
+      <div class="tabs" id="manager-main-tabs">
+        <button class="tab-btn active" onclick="setManagerTab('team')">Moi podwładni i Alerty</button>
+        <button class="tab-btn" onclick="setManagerTab('history')">Wystawione oceny</button>
+        <button class="tab-btn" id="tab-btn-manager-self" onclick="setManagerTab('self')">Moje oceny (jako oceniany)</button>
+      </div>
+
+      <!-- Podwidok 4.1: Lista podwładnych -->
+      <div id="manager-subview-team"></div>
+
+      <!-- Podwidok 4.2: Historia wystawionych ocen -->
+      <div id="manager-subview-history" class="hidden"></div>
+
+      <!-- Podwidok 4.3: Własny panel ocenianego dla Managera -->
+      <div id="manager-subview-self" class="hidden"></div>
+
+      <!-- Podwidok 4.4: Profil konkretnego pracownika (3 zakładki: A, B, C) -->
+      <div id="manager-subview-profile" class="hidden">
+        <div style="margin-bottom: 12px;">
+          <button class="btn btn-sm" onclick="closeEmployeeProfile()">&larr; Powrót do listy podwładnych</button>
+        </div>
+        <div id="profile-header-card" class="card"></div>
+
+        <div class="tabs" id="profile-tabs">
+          <button class="tab-btn active" onclick="setProfileTab('setup')">A) Rozmowa wstępna i kryteria</button>
+          <button class="tab-btn" onclick="setProfileTab('tasks')">B) Dziennik zadań i tagów</button>
+          <button class="tab-btn" onclick="setProfileTab('wizard')">C) Proces oceny końcowej (Kreator)</button>
+        </div>
+
+        <div id="profile-tab-setup"></div>
+        <div id="profile-tab-tasks" class="hidden"></div>
+        <div id="profile-tab-wizard" class="hidden"></div>
+      </div>
+    </section>
+
+    <!-- ======================================================================
+         SEKCJA HTML 5: PANEL DYREKTORA GENERALNEGO
+         ====================================================================== -->
+    <section id="section-director" class="hidden">
+      <div class="tabs" id="director-main-tabs">
+        <button class="tab-btn active" onclick="setDirectorTab('requests')">Odwołania i Wnioski o stopień</button>
+        <button class="tab-btn" onclick="setDirectorTab('team')">Moi podwładni (Oceny)</button>
+      </div>
+
+      <div id="director-subview-requests"></div>
+      <div id="director-subview-team" class="hidden">
+        <p class="text-muted" style="margin-bottom: 12px;">
+          Jako Dyrektor Generalny oceniasz bezpośrednio podległych kierowników (sam nie podlegasz ocenie w tym systemie).
+        </p>
+        <div id="director-team-mount"></div>
+      </div>
+    </section>
+
+    <!-- ======================================================================
+         SEKCJA HTML 6: PANEL ADMINISTRATORA
+         ====================================================================== -->
+    <section id="section-admin" class="hidden">
+      <div class="card">
+        <div class="card-header">
+          <h2>Dodaj nowego użytkownika</h2>
+          <span class="badge badge-primary">Panel Admina</span>
+        </div>
+        <form id="admin-add-user-form" onsubmit="handleAdminAddUser(event)">
+          <div class="grid-2">
+            <div class="form-group">
+              <label for="new-name">Imię i nazwisko</label>
+              <input type="text" id="new-name" placeholder="np. Katarzyna Kaczmarek" required>
+            </div>
+            <div class="form-group">
+              <label for="new-position">Nazwa stanowiska</label>
+              <input type="text" id="new-position" placeholder="np. Główny Specjalista ds. Prawnych" required>
+            </div>
+            <div class="form-group">
+              <label for="new-sheet-type">Typ stanowiska (automatyczny dobór arkusza)</label>
+              <select id="new-sheet-type">
+                <option value="C">Stanowisko nie-kierownicze (Arkusz C)</option>
+                <option value="B">Bezpośrednie kierowanie pracownikami (Arkusz B)</option>
+                <option value="A">Kierownik urzędu w służbie cywilnej (Arkusz A)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="new-role">Rola w systemie</label>
+              <select id="new-role">
+                <option value="OCENIANY">Oceniany (Pracownik)</option>
+                <option value="OCENIAJACY">Oceniający (Manager / Naczelnik)</option>
+                <option value="DYREKTOR">Dyrektor Generalny</option>
+                <option value="ADMIN">Administrator</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="new-employment">Status zatrudnienia</label>
+              <select id="new-employment" onchange="toggleRankInput()">
+                <option value="UMOWA_NIEOKRESLONA">Pracownik SC (umowa na czas nieokreślony)</option>
+                <option value="MIANOWANIE">Urzędnik SC (mianowanie)</option>
+              </select>
+            </div>
+            <div class="form-group" id="new-rank-group" style="display:none;">
+              <label for="new-rank">Stopień służbowy (1–9)</label>
+              <input type="number" id="new-rank" min="1" max="9" value="1">
+            </div>
+            <div class="form-group">
+              <label for="new-evaluator">Przypisany przełożony (oceniający)</label>
+              <select id="new-evaluator"></select>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary">Dodaj użytkownika do systemu</button>
+        </form>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h2>Lista użytkowników i struktura podległości</h2>
+        </div>
+        <div class="table-wrap" id="admin-users-table"></div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Kontener do czystego wydruku / PDF -->
+  <div id="print-sheet-area"></div>
+
+  <!-- Kontener na powiadomienia Toast (bez użycia alert()) -->
+  <div id="toast-container"></div>
+
+  <script>
+    /* ========================================================================
+       SEKCJA JS 1: KONFIGURACJA PRAWNA (ROZPORZĄDZENIE Z 4 KWIETNIA 2016 R.)
+       Oddzielona od logiki, aby łatwo dostosować system do nowelizacji ustawy!
+       ======================================================================== */
+    const LEGAL_CONFIG = {
+      cycleMonths: 24,
+      initialInterviewDaysNormal: 30,
+      initialInterviewDaysAfterNegative: 7,
+      maxAdditionalCriteria: 3,
+      appealDaysLimit: 7
+    };
+
+    // Pełna lista 14 oficjalnych kryteriów z Załącznika nr 1 do Rozporządzenia
+    const CRITERIA_CATALOG = [
+      {
+        id: 1,
+        name: "Komunikacja",
+        descriptions: [
+          "Koncentrowanie się na wypowiedzi rozmówcy i dbanie o wzajemne zrozumienie.",
+          "Wypowiadanie się w sposób jasny i precyzyjny, dostosowany do sytuacji i rozmówcy (dobieranie stylu, języka i treści).",
+          "Formułowanie jasnych i precyzyjnych wypowiedzi pisemnych dostosowanych do sytuacji i odbiorcy (dobieranie stylu, języka i treści).",
+          "Przedstawianie przekonujących argumentów odpowiednio do sytuacji."
+        ]
+      },
+      {
+        id: 2,
+        name: "Kreatywność",
+        descriptions: [
+          "Proponowanie lub tworzenie nowych rozwiązań.",
+          "Nieschematyczne podejście do zadań."
+        ]
+      },
+      {
+        id: 3,
+        name: "Negocjowanie",
+        descriptions: [
+          "Przygotowywanie się do negocjacji, w szczególności opracowanie projektu stanowiska, zakresu możliwych ustępstw i argumentacji.",
+          "Stosowanie technik i strategii negocjacyjnych.",
+          "Osiągnięcie efektu negocjacji akceptowanego przez przełożonych."
+        ]
+      },
+      {
+        id: 4,
+        name: "Organizacja pracy i orientacja na osiąganie celów",
+        descriptions: [
+          "Określanie sposobu realizacji zadań/celów.",
+          "Realizowanie zadań/celów w kolejności uwzględniającej ich wagę i pilność (ustalanie priorytetów działania).",
+          "Dobieranie niezbędnych zasobów umożliwiających realizację zadań/celów.",
+          "Dostosowywanie się do zmieniających się okoliczności.",
+          "Wytrwałość i zaangażowanie w realizację zadań/celów."
+        ]
+      },
+      {
+        id: 5,
+        name: "Orientacja na klienta/interesanta",
+        descriptions: [
+          "Taktowne zachowanie, wyrażające szacunek i zrozumienie dla drugiej osoby.",
+          "Reagowanie na potrzeby klienta/interesanta, w szczególności rozpoznawanie jego potrzeb i proponowanie rozwiązań."
+        ]
+      },
+      {
+        id: 6,
+        name: "Podejmowanie decyzji i odpowiedzialność",
+        descriptions: [
+          "Wypracowywanie alternatywnych rozwiązań na podstawie analizy informacji, w szczególności potencjalnego ryzyka.",
+          "Podejmowanie decyzji (decyzyjność).",
+          "Przyjmowanie odpowiedzialności za efekty podjętych decyzji."
+        ]
+      },
+      {
+        id: 7,
+        name: "Radzenie sobie w sytuacjach kryzysowych",
+        descriptions: [
+          "Rozpoznawanie sytuacji kryzysowych i informowanie o nich zainteresowanych.",
+          "Podejmowanie działań mających na celu rozwiązanie kryzysu.",
+          "Wyciąganie wniosków z sytuacji kryzysowych."
+        ]
+      },
+      {
+        id: 8,
+        name: "Rzetelność",
+        descriptions: [
+          "Wykonywanie zadań zgodnie z obowiązującymi standardami (przepisami, zasadami, procedurami) oraz dbałość o jakość rezultatów.",
+          "Dotrzymywanie zobowiązań (realizacja zadań) w wyznaczonym czasie."
+        ]
+      },
+      {
+        id: 9,
+        name: "Myślenie analityczne",
+        descriptions: [
+          "Rozróżnianie informacji istotnych i nieistotnych.",
+          "Dostrzeganie zależności między informacjami.",
+          "Formułowanie wniosków."
+        ]
+      },
+      {
+        id: 10,
+        name: "Wykorzystywanie wiedzy i doskonalenie zawodowe",
+        descriptions: [
+          "Wykorzystywanie wiedzy przy realizacji zadań na zajmowanym stanowisku pracy.",
+          "Doskonalenie wiedzy i umiejętności niezbędnych do wykonywania zadań na zajmowanym stanowisku pracy, w szczególności wyszukiwanie i pozyskiwanie wiedzy, korzystanie z dobrych praktyk i doświadczeń innych.",
+          "Korzystanie z dostępnych źródeł informacji, rozwiązań i technologii."
+        ]
+      },
+      {
+        id: 11,
+        name: "Współpraca",
+        descriptions: [
+          "Włączanie się w działania realizowane razem z innymi osobami, jeśli istnieje taka możliwość.",
+          "Dbanie o przepływ informacji.",
+          "Dbanie o dobrą atmosferę i otwartość we współpracy.",
+          "Dostrzeganie wkładu pracy innych osób.",
+          "Branie pod uwagę zdania innych osób.",
+          "Dzielenie się wiedzą i doświadczeniem."
+        ]
+      },
+      {
+        id: 12,
+        name: "Wystąpienia publiczne",
+        descriptions: [
+          "Wykorzystywanie różnych środków przekazu (np. narzędzi multimedialnych) i dbałość o sposób prezentacji (w tym autoprezentacji).",
+          "Nawiązywanie i utrzymywanie kontaktu z audytorium.",
+          "Zarządzanie czasem wystąpienia, w szczególności przestrzeganie ram czasowych, elastyczne reagowanie na potrzeby audytorium.",
+          "Radzenie sobie ze stresem i emocjami, w szczególności wywołanymi krytyką i trudnymi pytaniami."
+        ]
+      },
+      {
+        id: 13,
+        name: "Zarządzanie ludźmi",
+        descriptions: [
+          "Przydzielanie zakresu odpowiedzialności, zadań i uprawnień pracownikom (delegowanie zadań).",
+          "Monitorowanie realizacji zadań oraz w razie potrzeby podejmowanie działań korygujących lub zapobiegawczych.",
+          "Motywowanie pracowników.",
+          "Udzielanie pracownikom informacji zwrotnej opartej na ocenie ich zaangażowania i sposobu realizacji zadań.",
+          "Rozwiązywanie konfliktów.",
+          "Wspieranie pracowników w rozwoju zawodowym, w szczególności identyfikowanie potrzeb rozwojowych, proponowanie działań rozwojowych oraz monitorowanie ich realizacji."
+        ]
+      },
+      {
+        id: 14,
+        name: "Zarządzanie strategiczne",
+        descriptions: [
+          "Tworzenie wizji oraz wyznaczanie celów strategicznych w oparciu o całościowe i perspektywiczne widzenie organizacji, otoczenia oraz strategie rozwoju.",
+          "Formułowanie celów operacyjnych na podstawie celów strategicznych.",
+          "Analiza ryzyka planowanych działań o charakterze strategicznym."
+        ]
+      }
+    ];
+
+    // Kryteria obowiązkowe dla poszczególnych Arkuszy (A, B, C)
+    const SHEET_MANDATORY_CRITERIA = {
+      A: [13, 6, 4, 11, 1, 14], // Kierownik urzędu (6 kryteriów)
+      B: [13, 6, 4, 11, 1],     // Bezpośrednie kierowanie pracownikami (5 kryteriów)
+      C: [10, 8, 4, 11, 1]      // Pozostałe stanowiska (5 kryteriów)
+    };
+
+    // 14 uniwersalnych tagów mapowanych wiele-do-wielu + 2 tagi dobrostanowe (HR Partner)
+    const TAGS_CATALOG = [
+      { id: "#JasnyPrzekaz", label: "#JasnyPrzekaz (mowa/pismo)", criteriaIds: [1, 12, 5], isWellbeing: false },
+      { id: "#Argumentacja", label: "#Argumentacja (przekonywanie)", criteriaIds: [1, 3, 12], isWellbeing: false },
+      { id: "#TaktIEmpatia", label: "#TaktIEmpatia (szacunek/słuchanie)", criteriaIds: [5, 1, 11], isWellbeing: false },
+      { id: "#PracaZespołowa", label: "#PracaZespołowa (wsparcie/atmosfera)", criteriaIds: [11, 13], isWellbeing: false },
+      { id: "#TerminowośćIPriorytety", label: "#TerminowośćIPriorytety (czas/pilność)", criteriaIds: [4, 8, 12], isWellbeing: false },
+      { id: "#JakośćIProcedury", label: "#JakośćIProcedury (zgodność z prawem)", criteriaIds: [8, 10], isWellbeing: false },
+      { id: "#ElastycznośćIStres", label: "#ElastycznośćIStres (presja/kryzys)", criteriaIds: [4, 7, 12], isWellbeing: false },
+      { id: "#InicjatywaIInnowacja", label: "#InicjatywaIInnowacja (nowe pomysły)", criteriaIds: [2, 5, 10], isWellbeing: false },
+      { id: "#AnalizaIRyzyko", label: "#AnalizaIRyzyko (wnioski/ryzyko)", criteriaIds: [9, 6, 14], isWellbeing: false },
+      { id: "#Decyzyjność", label: "#Decyzyjność (odpowiedzialność)", criteriaIds: [6, 7], isWellbeing: false },
+      { id: "#RozwójIWiedza", label: "#RozwójIWiedza (szkolenia/technologia)", criteriaIds: [10, 11], isWellbeing: false },
+      { id: "#DelegowanieIMonitoring", label: "#DelegowanieIMonitoring (podział zadań)", criteriaIds: [13, 4], isWellbeing: false },
+      { id: "#MotywowanieIFeedback", label: "#MotywowanieIFeedback (rozwój zespołu)", criteriaIds: [13], isWellbeing: false },
+      { id: "#WizjaIStrategia", label: "#WizjaIStrategia (cele strategiczne)", criteriaIds: [14, 3], isWellbeing: false },
+      // Tagi dobrostanowe (nie obniżają oceny formalnej, wyzwalają alerty Wirtualnego HR Partnera)
+      { id: "#Przeciążenie", label: "#Przeciążenie [Dobrostan / HR Partner]", criteriaIds: [], isWellbeing: true },
+      { id: "#Nadgodziny", label: "#Nadgodziny [Dobrostan / HR Partner]", criteriaIds: [], isWellbeing: true }
+    ];
+
+    // Słownik gotowych pigułek rozwojowych IPRZ dopasowanych do kryteriów
+    const IPRZ_SUGGESTIONS_BY_CRITERION = {
+      1: "Szkolenie z prostego języka w pismach urzędowych i skutecznej komunikacji.",
+      2: "Warsztaty z myślenia projektowego (Design Thinking) w administracji publicznej.",
+      3: "Szkolenie praktyczne z technik negocjacji i budowania argumentacji.",
+      4: "Warsztaty z zarządzania czasem, ustalania priorytetów i organizacji pracy własnej.",
+      5: "Szkolenie z profesjonalnej obsługi interesanta i radzenia sobie z trudnym klientem.",
+      6: "Kurs z oceny ryzyka oraz podejmowania decyzji w warunkach niepewności.",
+      7: "Warsztaty z zarządzania stresem oraz działania w sytuacjach kryzysowych.",
+      8: "Szkolenie aktualizujące z procedur KPA i standardów kontroli jakości dokumentów.",
+      9: "Kurs zaawansowanej analizy danych i wyciągania wniosków (Excel / BI).",
+      10: "Udział w szkoleniach specjalistycznych i wymianie dobrych praktyk (KSAP).",
+      11: "Warsztaty ze współpracy zespołowej i sprawnego przepływu informacji.",
+      12: "Trening wystąpień publicznych oraz autoprezentacji.",
+      13: "Akademia Lidera SC: delegowanie zadań, motywowanie i udzielanie feedbacku.",
+      14: "Studia podyplomowe / warsztaty z zarządzania strategicznego w sektorze publicznym."
+    };
+
+    const SCORE_SCALE = [
+      { value: 1, label: "1 pkt — Znacznie poniżej oczekiwań" },
+      { value: 3, label: "3 pkt — Poniżej oczekiwań" },
+      { value: 5, label: "5 pkt — Na poziomie oczekiwań" },
+      { value: 7, label: "7 pkt — Powyżej oczekiwań" },
+      { value: 9, label: "9 pkt — Znacznie powyżej oczekiwań" }
+    ];
+
+    /* ========================================================================
+       SEKCJA JS 2: STAN APLIKACJI I DANE STARTOWE (MOCK DATA)
+       ======================================================================== */
+    let state = {
+      currentUserId: null,
+      managerActiveTab: "team",
+      directorActiveTab: "requests",
+      selectedEmployeeId: null,
+      profileActiveTab: "setup",
+
+      // Stan kreatora oceny okresowej (Wizard)
+      wizard: {
+        stepIndex: 0,
+        scores: {},
+        justification: "",
+        iprz: "",
+        requestRankPromotion: false,
+        evidenceFilter: null,       // 'all' | 'pos' | 'neg'
+        selectedEvidenceKeys: [],   // klucze zaznaczonych klocków dowodowych
+        usedIprzPills: []           // teksty klikniętych pigułek IPRZ
+      },
+
+      // Użytkownicy systemu (5 ról demo)
+      users: [
+        {
+          id: "u1",
+          name: "Anna Nowak",
+          position: "Starszy Specjalista ds. Analiz",
+          department: "Wydział Analiz i Sprawozdawczości",
+          sheetType: "C",
+          role: "OCENIANY",
+          employmentType: "MIANOWANIE",
+          rank: 2,
+          evaluatorId: "u2",
+          cycleStartDate: "2024-12-01",
+          cycleEndDate: "2026-12-01",
+          initialInterviewDate: "2024-12-18",
+          initialInterviewSignedAt: "2024-12-18 10:15",
+          initialInterviewNotes: "Omówiono przygotowywanie raportów kwartalnych oraz rozwój kompetencji analitycznych i obsługi interesanta.",
+          additionalCriteriaIds: [9, 5] // Myślenie analityczne, Orientacja na klienta
+        },
+        {
+          id: "u5",
+          name: "Tomasz Mazur",
+          position: "Specjalista ds. Kontroli",
+          department: "Wydział Analiz i Sprawozdawczości",
+          sheetType: "C",
+          role: "OCENIANY",
+          employmentType: "UMOWA_NIEOKRESLONA",
+          rank: null,
+          evaluatorId: "u2",
+          cycleStartDate: "2026-11-16",
+          cycleEndDate: "2027-05-16",
+          initialInterviewDate: "",
+          initialInterviewSignedAt: "",
+          initialInterviewNotes: "",
+          additionalCriteriaIds: [7] // Radzenie sobie w sytuacjach kryzysowych
+        },
+        {
+          id: "u2",
+          name: "Jan Kowalski",
+          position: "Naczelnik Wydziału Analiz",
+          department: "Wydział Analiz i Sprawozdawczości",
+          sheetType: "B",
+          role: "OCENIAJACY",
+          employmentType: "MIANOWANIE",
+          rank: 4,
+          evaluatorId: "u3",
+          cycleStartDate: "2025-01-10",
+          cycleEndDate: "2027-01-10",
+          initialInterviewDate: "2025-01-25",
+          initialInterviewSignedAt: "2025-01-25 13:00",
+          initialInterviewNotes: "Priorytet: sprawne delegowanie zadań w powiększonym zespole i regularny feedback.",
+          additionalCriteriaIds: [9]
+        },
+        {
+          id: "u3",
+          name: "Marek Wiśniewski",
+          position: "Dyrektor Generalny Urzędu",
+          department: "Kierownictwo Urzędu",
+          sheetType: "A",
+          role: "DYREKTOR",
+          employmentType: "MIANOWANIE",
+          rank: 7,
+          evaluatorId: null,
+          cycleStartDate: "2025-01-01",
+          cycleEndDate: "2027-01-01",
+          initialInterviewDate: "",
+          initialInterviewSignedAt: "",
+          initialInterviewNotes: "",
+          additionalCriteriaIds: []
+        },
+        {
+          id: "u4",
+          name: "Piotr Zieliński",
+          position: "Administrator Systemu IT",
+          department: "Biuro Informatyki",
+          sheetType: "C",
+          role: "ADMIN",
+          employmentType: "UMOWA_NIEOKRESLONA",
+          rank: null,
+          evaluatorId: "u3",
+          cycleStartDate: "2025-03-01",
+          cycleEndDate: "2027-03-01",
+          initialInterviewDate: "",
+          initialInterviewSignedAt: "",
+          initialInterviewNotes: "",
+          additionalCriteriaIds: []
+        }
+      ],
+
+      // Dziennik wykonanych zadań z tagami (+ / -) i komentarzami
+      tasks: [
+        {
+          id: "t1",
+          employeeId: "u1",
+          title: "Przygotowanie kwartalnego raportu budżetowego",
+          date: "2025-09-14",
+          description: "Zebranie danych z 4 wydziałów i opracowanie zestawienia dla Ministerstwa.",
+          tags: [
+            { tagId: "#JakośćIProcedury", polarity: "pos", comment: "Zero błędów formalnych, wzorowa zgodność z wytycznymi." },
+            { tagId: "#AnalizaIRyzyko", polarity: "pos", comment: "Szybko wychwyciła rozbieżność w kosztach terenowych." },
+            { tagId: "#TerminowośćIPriorytety", polarity: "pos", comment: "Raport oddany 2 dni przed terminem." }
+          ]
+        },
+        {
+          id: "t2",
+          employeeId: "u1",
+          title: "Obsługa trudnego zapytania w trybie informacji publicznej",
+          date: "2026-03-20",
+          description: "Odpowiedź pisemna i konsultacja telefoniczna z interesantem.",
+          tags: [
+            { tagId: "#JasnyPrzekaz", polarity: "pos", comment: "Bardzo przejrzyste i zrozumiałe pismo urzędowe." },
+            { tagId: "#TaktIEmpatia", polarity: "pos", comment: "Spokojna, kulturalna rozmowa mimo dużych emocji interesanta." }
+          ]
+        },
+        {
+          id: "t3",
+          employeeId: "u1",
+          title: "Wdrożenie nowego pracownika w system EZD",
+          date: "2026-08-05",
+          description: "Przekazanie wiedzy i opieka merytoryczna w pierwszym miesiącu.",
+          tags: [
+            { tagId: "#PracaZespołowa", polarity: "pos", comment: "Chętnie pomagała i dbała o świetną atmosferę." },
+            { tagId: "#RozwójIWiedza", polarity: "pos", comment: "Opracowała krótką instrukcję PDF dla całego wydziału." },
+            { tagId: "#TerminowośćIPriorytety", polarity: "neg", comment: "Przez dodatkowe wsparcie opóźniła własną notatkę służbową o 1 dzień." }
+          ]
+        },
+        {
+          id: "t4",
+          employeeId: "u5",
+          title: "Kontrola dokumentacji projektowej (zastępstwo za kolegę na L4)",
+          date: "2026-09-18",
+          description: "Przejęcie pilnych teczek w trakcie wzmożonego okresu sprawozdawczego.",
+          tags: [
+            { tagId: "#TerminowośćIPriorytety", polarity: "neg", comment: "Przekroczony termin oddania 2 protokołów kontrolnych." },
+            { tagId: "#ElastycznośćIStres", polarity: "neg", comment: "Widoczne duże zmęczenie i trudność z presją czasu." },
+            { tagId: "#Przeciążenie", polarity: "neg", comment: "Przejął pełen zakres obowiązków za nieobecnego współpracownika." }
+          ]
+        },
+        {
+          id: "t6",
+          employeeId: "u5",
+          title: "Odpowiedź na wystąpienie pokontrolne",
+          date: "2026-10-22",
+          description: "Przygotowanie korekty załączników i uzgodnień prawnych.",
+          tags: [
+            { tagId: "#JakośćIProcedury", polarity: "neg", comment: "Drobne pomyłki w numeracji załączników wymagające poprawy." },
+            { tagId: "#Nadgodziny", polarity: "neg", comment: "Zostawał po godzinach 3 razy w tym samym tygodniu." },
+            { tagId: "#PracaZespołowa", polarity: "pos", comment: "Mimo zmęczenia bez problemu przekazał komplet akt koleżance." }
+          ]
+        },
+        {
+          id: "t5",
+          employeeId: "u2",
+          title: "Reorganizacja pracy w Wydziale Analiz",
+          date: "2026-06-10",
+          description: "Nowy podział obowiązków i wdrożenie cotygodniowych spotkań statusowych.",
+          tags: [
+            { tagId: "#DelegowanieIMonitoring", polarity: "pos", comment: "Jasny podział odpowiedzialności w zespole." },
+            { tagId: "#MotywowanieIFeedback", polarity: "pos", comment: "Regularne rozmowy wspierające z pracownikami." },
+            { tagId: "#Decyzyjność", polarity: "pos", comment: "Sprawne podjęcie decyzji o przesunięciu zasobów." }
+          ]
+        }
+      ],
+
+      // Historia ocen okresowych
+      evaluations: [
+        {
+          id: "ev1",
+          employeeId: "u1",
+          evaluatorId: "u2",
+          sheetType: "C",
+          date: "2024-11-28",
+          average: 7.40,
+          level: "Powyżej oczekiwań",
+          result: "POZYTYWNA",
+          scores: { 10: 7, 8: 7, 4: 7, 11: 9, 1: 7 },
+          justification: "Bardzo wysoka jakość analiz i wzorowa współpraca w zespole.",
+          iprz: "Udział w szkoleniu z zaawansowanej analizy danych i wizualizacji.",
+          signedAt: "2024-11-28 14:22",
+          appealStatus: null
+        },
+        {
+          id: "ev2",
+          employeeId: "u5",
+          evaluatorId: "u2",
+          sheetType: "C",
+          date: "2026-11-14",
+          average: 3.40,
+          level: "Poniżej oczekiwań",
+          result: "NEGATYWNA",
+          scores: { 10: 5, 8: 3, 4: 3, 11: 3, 1: 3 },
+          justification: "Powtarzające się opóźnienia w realizacji protokołów kontrolnych oraz braki formalne.",
+          iprz: "Szkolenie z zarządzania czasem oraz mentoring starszego specjalisty.",
+          signedAt: "2026-11-14 11:05",
+          appealStatus: null
+        },
+        {
+          id: "ev3",
+          employeeId: "u2",
+          evaluatorId: "u3",
+          sheetType: "B",
+          date: "2024-12-20",
+          average: 7.40,
+          level: "Powyżej oczekiwań",
+          result: "POZYTYWNA",
+          scores: { 13: 7, 6: 7, 4: 7, 11: 9, 1: 7 },
+          justification: "Skuteczne kierowanie wydziałem i wysoka decyzyjność.",
+          iprz: "Warsztaty z zarządzania zmianą w administracji publicznej.",
+          signedAt: "2024-12-20 09:40",
+          appealStatus: null
+        }
+      ],
+
+      // Odwołania (sprzeciwy) do Dyrektora Generalnego
+      appeals: [],
+
+      // Fakultatywne wnioski o kolejny stopień służbowy do Dyrektora
+      rankRequests: [
+        {
+          id: "rr1",
+          employeeId: "u2",
+          evaluatorId: "u3",
+          evaluationId: "ev3",
+          requestedRank: 5,
+          motivation: "Wzorowe wyniki wydziału w okresie sprawozdawczym i wdrożenie nowych standardów.",
+          status: "OCZEKUJACY",
+          decisionNote: ""
+        }
+      ]
+    };
+
+    /* ========================================================================
+       SEKCJA JS 3: FUNKCJE POMOCNICZE (HELPERY I REGUŁY PRAWNE)
+       ======================================================================== */
+    function getUserById(id) {
+      for (let i = 0; i < state.users.length; i++) {
+        if (state.users[i].id === id) return state.users[i];
+      }
+      return null;
+    }
+
+    function getCriterionById(id) {
+      for (let i = 0; i < CRITERIA_CATALOG.length; i++) {
+        if (CRITERIA_CATALOG[i].id === id) return CRITERIA_CATALOG[i];
+      }
+      return null;
+    }
+
+    function getTagDefinition(tagId) {
+      for (let i = 0; i < TAGS_CATALOG.length; i++) {
+        if (TAGS_CATALOG[i].id === tagId) return TAGS_CATALOG[i];
+      }
+      return null;
+    }
+
+    function toRomanRank(num) {
+      let romans = ["", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX"];
+      return romans[num] || String(num);
+    }
+
+    function getEmployeeEvaluations(employeeId) {
+      let list = [];
+      for (let i = 0; i < state.evaluations.length; i++) {
+        if (state.evaluations[i].employeeId === employeeId) {
+          list.push(state.evaluations[i]);
+        }
+      }
+      list.sort(function(a, b) { return b.date.localeCompare(a.date); });
+      return list;
+    }
+
+    function getEmployeeTasks(employeeId) {
+      let list = [];
+      for (let i = 0; i < state.tasks.length; i++) {
+        if (state.tasks[i].employeeId === employeeId) {
+          list.push(state.tasks[i]);
+        }
+      }
+      return list;
+    }
+
+    function getActiveCriteriaForEmployee(emp) {
+      let mandatory = SHEET_MANDATORY_CRITERIA[emp.sheetType] || [];
+      let combined = [];
+      for (let i = 0; i < mandatory.length; i++) {
+        combined.push({ id: mandatory[i], isMandatory: true });
+      }
+      for (let j = 0; j < emp.additionalCriteriaIds.length; j++) {
+        let addId = emp.additionalCriteriaIds[j];
+        if (mandatory.indexOf(addId) === -1) {
+          combined.push({ id: addId, isMandatory: false });
+        }
+      }
+      return combined;
+    }
+
+    // Zwraca płaską listę wszystkich "klocków dowodowych" (zadań + tagów) pracownika
+    function getAllEvidenceBlocksForEmployee(employeeId) {
+      let blocks = [];
+      let tasks = getEmployeeTasks(employeeId);
+      for (let i = 0; i < tasks.length; i++) {
+        let task = tasks[i];
+        for (let j = 0; j < task.tags.length; j++) {
+          let tg = task.tags[j];
+          let def = getTagDefinition(tg.tagId);
+          let sign = tg.polarity === "pos" ? "+" : "-";
+          let commentText = tg.comment ? tg.comment : "obserwacja bez dodatkowego komentarza";
+          let formattedLine = "• " + task.date + " – " + task.title + " (" + sign + tg.tagId + "): " + commentText;
+          blocks.push({
+            key: task.id + "_" + j,
+            taskId: task.id,
+            date: task.date,
+            taskTitle: task.title,
+            tagId: tg.tagId,
+            polarity: tg.polarity,
+            isWellbeing: def ? def.isWellbeing : false,
+            comment: tg.comment,
+            formattedLine: formattedLine
+          });
+        }
+      }
+      return blocks;
+    }
+
+    // Zlicza tagi (+) i (-) przypisane do konkretnego kryterium u pracownika
+    function getTagSummaryForCriterion(employeeId, criterionId) {
+      let posCount = 0;
+      let negCount = 0;
+      let entries = [];
+      let tasks = getEmployeeTasks(employeeId);
+
+      for (let i = 0; i < tasks.length; i++) {
+        let task = tasks[i];
+        for (let j = 0; j < task.tags.length; j++) {
+          let t = task.tags[j];
+          let tagDef = getTagDefinition(t.tagId);
+          if (tagDef && !tagDef.isWellbeing && tagDef.criteriaIds.indexOf(criterionId) !== -1) {
+            if (t.polarity === "pos") posCount++;
+            else negCount++;
+            entries.push({
+              taskTitle: task.title,
+              taskDate: task.date,
+              tagId: t.tagId,
+              polarity: t.polarity,
+              comment: t.comment
+            });
+          }
+        }
+      }
+
+      let total = posCount + negCount;
+      let suggestedScore = 5;
+      let suggestedLabel = "5 pkt (Na poziomie oczekiwań)";
+
+      if (total > 0) {
+        let ratio = posCount / total;
+        if (ratio >= 0.85 && posCount >= 3) {
+          suggestedScore = 9;
+          suggestedLabel = "9 pkt (Znacznie powyżej oczekiwań)";
+        } else if (ratio >= 0.65 && posCount >= 1) {
+          suggestedScore = 7;
+          suggestedLabel = "7 pkt (Powyżej oczekiwań)";
+        } else if (ratio >= 0.4) {
+          suggestedScore = 5;
+          suggestedLabel = "5 pkt (Na poziomie oczekiwań)";
+        } else if (ratio > 0 || negCount <= 2) {
+          suggestedScore = 3;
+          suggestedLabel = "3 pkt (Poniżej oczekiwań)";
+        } else {
+          suggestedScore = 1;
+          suggestedLabel = "1 pkt (Znacznie poniżej oczekiwań)";
+        }
+      }
+
+      return { posCount, negCount, total, entries, suggestedScore, suggestedLabel };
+    }
+
+    // Wylicza ogólny poziom i wynik (POZYTYWNA / NEGATYWNA) zgodnie z § 11 Rozporządzenia
+    function calculateFinalResult(scoresObj) {
+      let keys = Object.keys(scoresObj);
+      if (keys.length === 0) {
+        return { average: 0, level: "Brak danych", result: "NEGATYWNA", hasOnePoint: false };
+      }
+
+      let sum = 0;
+      let hasOnePoint = false;
+      for (let i = 0; i < keys.length; i++) {
+        let val = Number(scoresObj[keys[i]]);
+        sum += val;
+        if (val === 1) hasOnePoint = true;
+      }
+
+      let avg = sum / keys.length;
+      let level = "";
+      if (avg <= 2) level = "Znacznie poniżej oczekiwań";
+      else if (avg <= 4) level = "Poniżej oczekiwań";
+      else if (avg <= 6) level = "Na poziomie oczekiwań";
+      else if (avg <= 8) level = "Powyżej oczekiwań";
+      else level = "Znacznie powyżej oczekiwań";
+
+      // Zasada z Rozporządzenia: choć jedna ocena 1 pkt automatycznie daje ocenę NEGATYWNĄ
+      let result = (avg > 4 && !hasOnePoint) ? "POZYTYWNA" : "NEGATYWNA";
+      return { average: Number(avg.toFixed(2)), level: level, result: result, hasOnePoint: hasOnePoint };
+    }
+
+    function addDaysToDate(dateStr, days) {
+      if (!dateStr) return "—";
+      let d = new Date(dateStr);
+      d.setDate(d.getDate() + days);
+      return d.toISOString().split("T")[0];
+    }
+
+    function showToast(message, type) {
+      let container = document.getElementById("toast-container");
+      let el = document.createElement("div");
+      el.className = "toast " + (type || "");
+      el.textContent = message;
+      container.appendChild(el);
+      setTimeout(function() {
+        el.remove();
+      }, 3400);
+    }
+
+    function escapeHtml(str) {
+      if (!str) return "";
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    /* ========================================================================
+       SEKCJA JS 4: LOGOWANIE I PRZEŁĄCZANIE RÓL
+       ======================================================================== */
+    function renderTopbarSwitcher() {
+      let select = document.getElementById("quick-role-select");
+      let html = '<option value="">-- Wybierz konto (Ekran startowy) --</option>';
+      for (let i = 0; i < state.users.length; i++) {
+        let u = state.users[i];
+        let selected = (u.id === state.currentUserId) ? "selected" : "";
+        html += '<option value="' + u.id + '" ' + selected + '>' +
+          escapeHtml(u.name) + ' (' + u.role + ' — Arkusz ' + u.sheetType + ')</option>';
+      }
+      select.innerHTML = html;
+
+      let btnLogout = document.getElementById("btn-logout");
+      if (state.currentUserId) btnLogout.classList.remove("hidden");
+      else btnLogout.classList.add("hidden");
+    }
+
+    function renderLoginScreen() {
+      let grid = document.getElementById("login-cards-grid");
+      let html = "";
+      for (let i = 0; i < state.users.length; i++) {
+        let u = state.users[i];
+        let rankInfo = u.employmentType === "MIANOWANIE"
+          ? "Urzędnik mianowany (stopień " + toRomanRank(u.rank) + ")"
+          : "Pracownik SC (czas nieokreślony)";
+        html += `
+          <div class="card login-card" onclick="switchUserById('${u.id}')">
+            <div>
+              <span class="badge badge-primary" style="margin-bottom:8px;">${u.role}</span>
+              <span class="badge" style="margin-bottom:8px;">Arkusz ${u.sheetType}</span>
+              <h3>${escapeHtml(u.name)}</h3>
+              <p class="text-muted">${escapeHtml(u.position)}</p>
+              <p class="text-muted" style="margin-top:6px; font-size:12px;">${rankInfo}</p>
+            </div>
+            <div style="margin-top:14px;">
+              <button class="btn btn-primary btn-sm" style="width:100%;">Wejdź jako ${escapeHtml(u.name.split(' ')[0])}</button>
+            </div>
+          </div>
+        `;
+      }
+      grid.innerHTML = html;
+    }
+
+    function switchUserById(userId) {
+      if (!userId) {
+        logout();
+        return;
+      }
+      state.currentUserId = userId;
+      state.selectedEmployeeId = null;
+      state.managerActiveTab = "team";
+      state.directorActiveTab = "requests";
+      renderApp();
+      let u = getUserById(userId);
+      if (u) showToast("Przełączono na konto: " + u.name + " (" + u.role + ")", "success");
+    }
+
+    function logout() {
+      state.currentUserId = null;
+      state.selectedEmployeeId = null;
+      renderApp();
+    }
+
+    /* ========================================================================
+       SEKCJA JS 5: GŁÓWNY ROUTER WIDOKÓW
+       ======================================================================== */
+    function renderApp() {
+      renderTopbarSwitcher();
+
+      document.getElementById("section-login").classList.add("hidden");
+      document.getElementById("section-employee").classList.add("hidden");
+      document.getElementById("section-manager").classList.add("hidden");
+      document.getElementById("section-director").classList.add("hidden");
+      document.getElementById("section-admin").classList.add("hidden");
+
+      if (!state.currentUserId) {
+        document.getElementById("section-login").classList.remove("hidden");
+        renderLoginScreen();
+        return;
+      }
+
+      let user = getUserById(state.currentUserId);
+      if (!user) return;
+
+      if (user.role === "OCENIANY") {
+        document.getElementById("section-employee").classList.remove("hidden");
+        renderEmployeePanel(user, "employee-view-content");
+      } else if (user.role === "OCENIAJACY") {
+        document.getElementById("section-manager").classList.remove("hidden");
+        renderManagerPanel(user);
+      } else if (user.role === "DYREKTOR") {
+        document.getElementById("section-director").classList.remove("hidden");
+        renderDirectorPanel(user);
+      } else if (user.role === "ADMIN") {
+        document.getElementById("section-admin").classList.remove("hidden");
+        renderAdminPanel();
+      }
+    }
+
+    /* ========================================================================
+       SEKCJA JS 6: WIDOK OCENIANEGO (PRACOWNIKA) + SKŁADANIE ODWOŁAŃ
+       ======================================================================== */
+    function renderEmployeePanel(user, targetElementId) {
+      let evaluator = getUserById(user.evaluatorId);
+      let evals = getEmployeeEvaluations(user.id);
+      let lastEval = evals.length > 0 ? evals[0] : null;
+      let isAfterNegative = lastEval && lastEval.result === "NEGATYWNA";
+      let criteriaLimitDays = isAfterNegative
+        ? LEGAL_CONFIG.initialInterviewDaysAfterNegative
+        : LEGAL_CONFIG.initialInterviewDaysNormal;
+      let interviewDeadline = addDaysToDate(user.cycleStartDate, criteriaLimitDays);
+
+      let criteriaList = getActiveCriteriaForEmployee(user);
+      let criteriaHtml = "";
+      for (let i = 0; i < criteriaList.length; i++) {
+        let c = getCriterionById(criteriaList[i].id);
+        let typeBadge = criteriaList[i].isMandatory
+          ? '<span class="badge badge-primary">Obowiązkowe</span>'
+          : '<span class="badge badge-warning">Dodatkowe</span>';
+        criteriaHtml += `<li style="margin-bottom:6px;"><strong>${escapeHtml(c.name)}</strong> ${typeBadge}</li>`;
+      }
+
+      let evalsHtml = "";
+      if (evals.length === 0) {
+        evalsHtml = '<p class="text-muted">Brak wystawionych ocen okresowych w systemie.</p>';
+      } else {
+        for (let i = 0; i < evals.length; i++) {
+          let ev = evals[i];
+          let evBy = getUserById(ev.evaluatorId);
+          let resBadge = ev.result === "POZYTYWNA"
+            ? '<span class="badge badge-positive">POZYTYWNA</span>'
+            : '<span class="badge badge-negative">NEGATYWNA</span>';
+
+          let appealBlock = "";
+          if (ev.appealStatus) {
+            appealBlock = `<div class="alert-box alert-warning" style="margin-top:10px;">
+              <strong>Status odwołania (sprzeciwu):</strong> ${escapeHtml(ev.appealStatus)}
+            </div>`;
+          } else {
+            appealBlock = `
+              <div style="margin-top:10px;">
+                <button class="btn btn-sm" onclick="toggleAppealForm('${ev.id}')">Złóż odwołanie (sprzeciw — 7 dni)</button>
+                <div id="appeal-form-${ev.id}" class="hidden" style="margin-top:10px; padding:12px; background:var(--bg-subtle); border-radius:6px;">
+                  <div class="form-group">
+                    <label>Uzasadnienie sprzeciwu do Dyrektora Generalnego:</label>
+                    <textarea id="appeal-text-${ev.id}" placeholder="Opisz, z którymi ocenami cząstkowymi się nie zgadzasz i dlaczego..."></textarea>
+                  </div>
+                  <button class="btn btn-negative btn-sm" onclick="submitAppeal('${ev.id}')">Wyślij sprzeciw do Dyrektora</button>
+                </div>
+              </div>
+            `;
+          }
+
+          evalsHtml += `
+            <div class="task-item">
+              <div style="display:flex; flex-wrap:wrap; justify-content:space-between; gap:8px; margin-bottom:8px;">
+                <div>
+                  <strong>Ocena z dnia ${escapeHtml(ev.date)}</strong> (Arkusz ${ev.sheetType})
+                  <span class="text-muted"> — Oceniający: ${evBy ? escapeHtml(evBy.name) : "—"}</span>
+                </div>
+                <div>${resBadge} <span class="badge badge-primary">Średnia: ${ev.average} (${escapeHtml(ev.level)})</span></div>
+              </div>
+              <p style="white-space:pre-line;"><strong>Uzasadnienie:</strong> ${escapeHtml(ev.justification || "Brak (fakultatywne przy ocenie pozytywnej)")}</p>
+              <p style="margin-top:6px; white-space:pre-line;"><strong>Wnioski do IPRZ:</strong> ${escapeHtml(ev.iprz || "—")}</p>
+              <p class="text-muted" style="margin-top:6px; font-size:12px;">Podpis elektroniczny: ${escapeHtml(ev.signedAt)}</p>
+              ${appealBlock}
+            </div>
+          `;
+        }
+      }
+
+      let rankText = user.employmentType === "MIANOWANIE"
+        ? "Urzędnik służby cywilnej — Stopień służbowy: <strong>" + toRomanRank(user.rank) + " (" + user.rank + ")</strong>"
+        : "Pracownik służby cywilnej (umowa na czas nieokreślony)";
+
+      document.getElementById(targetElementId).innerHTML = `
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <h2>Profil ocenianego: ${escapeHtml(user.name)}</h2>
+              <span class="text-muted">${escapeHtml(user.position)} &bull; ${escapeHtml(user.department)}</span>
+            </div>
+            <div><span class="badge badge-primary">Arkusz ${user.sheetType}</span></div>
+          </div>
+          <div class="grid-2">
+            <div>
+              <p><strong>Przypisany oceniający:</strong> ${evaluator ? escapeHtml(evaluator.name) + ' (' + escapeHtml(evaluator.position) + ')' : 'Brak'}</p>
+              <p style="margin-top:6px;"><strong>Status zatrudnienia:</strong> ${rankText}</p>
+            </div>
+            <div>
+              <p><strong>Zasada terminu rozmowy wstępnej:</strong> ${isAfterNegative ? '<span class="badge badge-negative">7 dni (po ocenie negatywnej)</span>' : '<span class="badge badge-positive">30 dni (tryb standardowy)</span>'}</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Oś czasu bieżącego okresu oceny</h3>
+          <div class="timeline">
+            <div class="timeline-step done">
+              <div class="timeline-date">${escapeHtml(user.cycleStartDate)}</div>
+              <div><strong>Początek cyklu</strong></div>
+              <div class="text-muted">Rozpoczęcie okresu oceny</div>
+            </div>
+            <div class="timeline-step ${user.initialInterviewDate ? 'done' : 'urgent'}">
+              <div class="timeline-date">Limit: ${interviewDeadline}</div>
+              <div><strong>Rozmowa wstępna (${criteriaLimitDays} dni)</strong></div>
+              <div class="text-muted">${user.initialInterviewDate ? 'Odbyta: ' + user.initialInterviewDate : 'Oczekuje na ustalenie'}</div>
+            </div>
+            <div class="timeline-step">
+              <div class="timeline-date">W trakcie</div>
+              <div><strong>Bieżąca realizacja zadań</strong></div>
+              <div class="text-muted">Obserwacja i zbieranie tagów</div>
+            </div>
+            <div class="timeline-step">
+              <div class="timeline-date">${escapeHtml(user.cycleEndDate)}</div>
+              <div><strong>Termin oceny końcowej</strong></div>
+              <div class="text-muted">Standardowo 24 miesiące</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Kryteria brane pod uwagę w bieżącej ocenie (Arkusz ${user.sheetType})</h3>
+          <ul style="margin-left:18px; margin-top:8px;">${criteriaHtml}</ul>
+        </div>
+
+        <div class="card">
+          <h3>Historia ocen okresowych i odwołania</h3>
+          ${evalsHtml}
+        </div>
+      `;
+    }
+
+    function toggleAppealForm(evalId) {
+      let el = document.getElementById("appeal-form-" + evalId);
+      if (el) el.classList.toggle("hidden");
+    }
+
+    function submitAppeal(evalId) {
+      let textEl = document.getElementById("appeal-text-" + evalId);
+      let reason = textEl ? textEl.value.trim() : "";
+      if (!reason) {
+        showToast("Wpisz uzasadnienie sprzeciwu przed wysłaniem.", "error");
+        return;
+      }
+
+      let ev = null;
+      for (let i = 0; i < state.evaluations.length; i++) {
+        if (state.evaluations[i].id === evalId) { ev = state.evaluations[i]; break; }
+      }
+      if (!ev) return;
+
+      ev.appealStatus = "Złożono sprzeciw — oczekuje na rozpatrzenie przez Dyrektora";
+      state.appeals.push({
+        id: "ap" + Date.now(),
+        evaluationId: ev.id,
+        employeeId: ev.employeeId,
+        evaluatorId: ev.evaluatorId,
+        date: new Date().toISOString().split("T")[0],
+        reason: reason,
+        status: "OCZEKUJACE",
+        directorNote: ""
+      });
+
+      showToast("Sprzeciw został wysłany do Dyrektora Generalnego oraz zgłoszony Oceniającemu.", "success");
+      renderApp();
+    }
+
+    /* ========================================================================
+       SEKCJA JS 7: PANEL OCENIAJĄCEGO (LISTA PODWŁADNYCH, ALERTY HR PARTNERA)
+       ======================================================================== */
+    function setManagerTab(tabName) {
+      state.managerActiveTab = tabName;
+      state.selectedEmployeeId = null;
+      renderApp();
+    }
+
+    function renderManagerPanel(managerUser) {
+      let subTeam = document.getElementById("manager-subview-team");
+      let subHistory = document.getElementById("manager-subview-history");
+      let subSelf = document.getElementById("manager-subview-self");
+      let subProfile = document.getElementById("manager-subview-profile");
+      let mainTabs = document.getElementById("manager-main-tabs");
+
+      subTeam.classList.add("hidden");
+      subHistory.classList.add("hidden");
+      subSelf.classList.add("hidden");
+      subProfile.classList.add("hidden");
+
+      if (state.selectedEmployeeId) {
+        mainTabs.classList.add("hidden");
+        subProfile.classList.remove("hidden");
+        renderEmployeeProfileForManager(state.selectedEmployeeId);
+        return;
+      }
+
+      mainTabs.classList.remove("hidden");
+      let btns = mainTabs.querySelectorAll(".tab-btn");
+      btns[0].classList.toggle("active", state.managerActiveTab === "team");
+      btns[1].classList.toggle("active", state.managerActiveTab === "history");
+      btns[2].classList.toggle("active", state.managerActiveTab === "self");
+
+      if (state.managerActiveTab === "team") {
+        subTeam.classList.remove("hidden");
+        renderSubordinatesList(managerUser.id, "manager-subview-team");
+      } else if (state.managerActiveTab === "history") {
+        subHistory.classList.remove("hidden");
+        renderManagerHistory(managerUser.id);
+      } else if (state.managerActiveTab === "self") {
+        subSelf.classList.remove("hidden");
+        renderEmployeePanel(managerUser, "manager-subview-self");
+      }
+    }
+
+    function renderSubordinatesList(managerId, containerId) {
+      let subs = [];
+      for (let i = 0; i < state.users.length; i++) {
+        if (state.users[i].evaluatorId === managerId) subs.push(state.users[i]);
+      }
+
+      let alertsHtml = "";
+      for (let i = 0; i < state.appeals.length; i++) {
+        let ap = state.appeals[i];
+        if (ap.evaluatorId === managerId) {
+          let emp = getUserById(ap.employeeId);
+          alertsHtml += `<div class="alert-box alert-negative">
+            <strong>Odwołanie od oceny:</strong> Pracownik ${emp ? escapeHtml(emp.name) : ""} złożył sprzeciw (Status: ${ap.status}).
+          </div>`;
+        }
+      }
+
+      let cardsHtml = "";
+      if (subs.length === 0) {
+        cardsHtml = '<p class="text-muted">Brak przypisanych podwładnych.</p>';
+      } else {
+        for (let i = 0; i < subs.length; i++) {
+          let emp = subs[i];
+          let tasks = getEmployeeTasks(emp.id);
+          let posTotal = 0;
+          let negTotal = 0;
+          let wellbeingSignals = 0;
+
+          for (let t = 0; t < tasks.length; t++) {
+            for (let g = 0; g < tasks[t].tags.length; g++) {
+              let tg = tasks[t].tags[g];
+              let def = getTagDefinition(tg.tagId);
+              if (def && def.isWellbeing) {
+                wellbeingSignals++;
+              } else if (tg.polarity === "pos") {
+                posTotal++;
+              } else {
+                negTotal++;
+              }
+            }
+          }
+
+          let evals = getEmployeeEvaluations(emp.id);
+          let lastEval = evals.length > 0 ? evals[0] : null;
+          let isAfterNeg = lastEval && lastEval.result === "NEGATYWNA";
+
+          let empAlerts = "";
+          if (!emp.initialInterviewDate) {
+            let days = isAfterNeg ? LEGAL_CONFIG.initialInterviewDaysAfterNegative : LEGAL_CONFIG.initialInterviewDaysNormal;
+            empAlerts += `<div class="alert-box alert-warning" style="margin-top:8px; padding:8px 10px;">
+              <strong>Termin formalny:</strong> Wymagana rozmowa wstępna w ciągu <strong>${days} dni</strong> (do ${addDaysToDate(emp.cycleStartDate, days)}).
+              ${isAfterNeg ? ' <em>(Skrócony limit po ocenie negatywnej)</em>' : ''}
+            </div>`;
+          }
+          if (wellbeingSignals >= 1 || negTotal >= 3) {
+            empAlerts += `<div class="alert-box alert-wellbeing" style="margin-top:8px; padding:8px 10px;">
+              <strong>Wirtualny HR Partner (Ryzyko przeciążenia / wypalenia):</strong>
+              Wykryto sygnały dobrostanowe (#Przeciążenie / #Nadgodziny: ${wellbeingSignals}) oraz ${negTotal} uwag (-).
+              Sugerowane działanie: zaplanuj rozmowę wspierającą, sprawdź podział zadań z zastępstwa i czasowo zmień priorytety.
+            </div>`;
+          } else if (posTotal >= 5) {
+            empAlerts += `<div class="alert-box alert-positive" style="margin-top:8px; padding:8px 10px;">
+              <strong>Wirtualny HR Partner (Kultura doceniania):</strong>
+              Pracownik zebrał aż ${posTotal} pozytywnych obserwacji (+). Warto docenić zaangażowanie krótką pochwałą na spotkaniu zespołu!
+            </div>`;
+          }
+          if (emp.cycleEndDate <= "2026-12-31") {
+            empAlerts += `<div class="alert-box alert-info" style="margin-top:8px; padding:8px 10px;">
+              <strong>Zbliżający się koniec okresu oceny:</strong> ${escapeHtml(emp.cycleEndDate)} — otwórz profil i przejdź do kreatora oceny.
+            </div>`;
+          }
+
+          cardsHtml += `
+            <div class="card">
+              <div style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:10px;">
+                <div>
+                  <h3 style="margin-bottom:2px;">${escapeHtml(emp.name)}</h3>
+                  <span class="text-muted">${escapeHtml(emp.position)}</span>
+                  <div style="margin-top:6px; display:flex; flex-wrap:wrap; gap:6px;">
+                    <span class="badge badge-primary">Arkusz ${emp.sheetType}</span>
+                    <span class="badge badge-positive">Tagi (+): ${posTotal}</span>
+                    <span class="badge badge-negative">Tagi (-): ${negTotal}</span>
+                    ${wellbeingSignals > 0 ? '<span class="badge badge-wellbeing">Sygnały dobrostanu: ' + wellbeingSignals + '</span>' : ''}
+                    ${emp.employmentType === "MIANOWANIE" ? '<span class="badge">Mianowany (st. ' + toRomanRank(emp.rank) + ')</span>' : ''}
+                  </div>
+                </div>
+                <div>
+                  <button class="btn btn-primary" onclick="openEmployeeProfile('${emp.id}')">Otwórz profil i ocenę &rarr;</button>
+                </div>
+              </div>
+              ${empAlerts}
+            </div>
+          `;
+        }
+      }
+
+      document.getElementById(containerId).innerHTML = alertsHtml + cardsHtml;
+    }
+
+    function renderManagerHistory(managerId) {
+      let list = [];
+      for (let i = 0; i < state.evaluations.length; i++) {
+        if (state.evaluations[i].evaluatorId === managerId) list.push(state.evaluations[i]);
+      }
+
+      let html = '<div class="card"><div class="card-header"><h2>Wystawione oceny okresowe</h2></div>';
+      if (list.length === 0) {
+        html += '<p class="text-muted">Nie wystawiłeś jeszcze żadnych ocen.</p>';
+      } else {
+        html += '<div class="table-wrap"><table><thead><tr><th>Pracownik</th><th>Data</th><th>Arkusz</th><th>Średnia</th><th>Wynik</th><th>Odwołanie</th><th>Akcja</th></tr></thead><tbody>';
+        for (let i = 0; i < list.length; i++) {
+          let ev = list[i];
+          let emp = getUserById(ev.employeeId);
+          html += `<tr>
+            <td><strong>${emp ? escapeHtml(emp.name) : "—"}</strong></td>
+            <td>${escapeHtml(ev.date)}</td>
+            <td>Arkusz ${ev.sheetType}</td>
+            <td>${ev.average} (${escapeHtml(ev.level)})</td>
+            <td><span class="badge ${ev.result === 'POZYTYWNA' ? 'badge-positive' : 'badge-negative'}">${ev.result}</span></td>
+            <td>${ev.appealStatus ? escapeHtml(ev.appealStatus) : '<span class="text-muted">Brak</span>'}</td>
+            <td><button class="btn btn-sm" onclick="printEvaluationById('${ev.id}')">Drukuj / PDF</button></td>
+          </tr>`;
+        }
+        html += '</tbody></table></div>';
+      }
+      html += '</div>';
+      document.getElementById("manager-subview-history").innerHTML = html;
+    }
+
+    /* ========================================================================
+       SEKCJA JS 8: PROFIL PRACOWNIKA DLA MANAGERA (ZAKŁADKI A, B, C)
+       ======================================================================== */
+    function openEmployeeProfile(empId) {
+      state.selectedEmployeeId = empId;
+      state.profileActiveTab = "setup";
+      state.wizard = {
+        stepIndex: 0,
+        scores: {},
+        justification: "",
+        iprz: "",
+        requestRankPromotion: false,
+        evidenceFilter: null,
+        selectedEvidenceKeys: [],
+        usedIprzPills: []
+      };
+
+      let currentUser = getUserById(state.currentUserId);
+      if (currentUser && currentUser.role === "DYREKTOR") {
+        document.getElementById("section-director").classList.add("hidden");
+        document.getElementById("section-manager").classList.remove("hidden");
+      }
+      renderManagerPanel(currentUser);
+    }
+
+    function closeEmployeeProfile() {
+      state.selectedEmployeeId = null;
+      renderApp();
+    }
+
+    function setProfileTab(tabName) {
+      state.profileActiveTab = tabName;
+      renderEmployeeProfileForManager(state.selectedEmployeeId);
+    }
+
+    function renderEmployeeProfileForManager(empId) {
+      let emp = getUserById(empId);
+      if (!emp) return;
+
+      let rankBadge = emp.employmentType === "MIANOWANIE"
+        ? '<span class="badge badge-primary">Urzędnik mianowany — stopień ' + toRomanRank(emp.rank) + '</span>'
+        : '<span class="badge">Pracownik SC</span>';
+
+      document.getElementById("profile-header-card").innerHTML = `
+        <div style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:10px;">
+          <div>
+            <h2>${escapeHtml(emp.name)}</h2>
+            <p class="text-muted">${escapeHtml(emp.position)} &bull; ${escapeHtml(emp.department)}</p>
+          </div>
+          <div style="display:flex; flex-wrap:wrap; gap:6px;">
+            <span class="badge badge-primary">Arkusz ${emp.sheetType}</span>
+            ${rankBadge}
+          </div>
+        </div>
+      `;
+
+      let tabs = document.getElementById("profile-tabs").querySelectorAll(".tab-btn");
+      tabs[0].classList.toggle("active", state.profileActiveTab === "setup");
+      tabs[1].classList.toggle("active", state.profileActiveTab === "tasks");
+      tabs[2].classList.toggle("active", state.profileActiveTab === "wizard");
+
+      document.getElementById("profile-tab-setup").classList.add("hidden");
+      document.getElementById("profile-tab-tasks").classList.add("hidden");
+      document.getElementById("profile-tab-wizard").classList.add("hidden");
+
+      if (state.profileActiveTab === "setup") {
+        document.getElementById("profile-tab-setup").classList.remove("hidden");
+        renderProfileSetupTab(emp);
+      } else if (state.profileActiveTab === "tasks") {
+        document.getElementById("profile-tab-tasks").classList.remove("hidden");
+        renderProfileTasksTab(emp);
+      } else if (state.profileActiveTab === "wizard") {
+        document.getElementById("profile-tab-wizard").classList.remove("hidden");
+        renderProfileWizardTab(emp);
+      }
+    }
+
+    // --- ZAKŁADKA A: ROZMOWA WSTĘPNA, KRYTERIA DODATKOWE I E-PODPIS ---
+    function renderProfileSetupTab(emp) {
+      let evals = getEmployeeEvaluations(emp.id);
+      let isAfterNeg = evals.length > 0 && evals[0].result === "NEGATYWNA";
+      let limitDays = isAfterNeg
+        ? LEGAL_CONFIG.initialInterviewDaysAfterNegative
+        : LEGAL_CONFIG.initialInterviewDaysNormal;
+      let deadline = addDaysToDate(emp.cycleStartDate, limitDays);
+
+      let mandatoryIds = SHEET_MANDATORY_CRITERIA[emp.sheetType] || [];
+      let mandatoryHtml = "";
+      for (let i = 0; i < mandatoryIds.length; i++) {
+        let c = getCriterionById(mandatoryIds[i]);
+        mandatoryHtml += `<li style="margin-bottom:4px;"><strong>${escapeHtml(c.name)}</strong></li>`;
+      }
+
+      let additionalCheckboxesHtml = "";
+      for (let i = 0; i < CRITERIA_CATALOG.length; i++) {
+        let c = CRITERIA_CATALOG[i];
+        if (mandatoryIds.indexOf(c.id) !== -1) continue;
+        let checked = emp.additionalCriteriaIds.indexOf(c.id) !== -1 ? "checked" : "";
+        additionalCheckboxesHtml += `
+          <label style="display:flex; align-items:center; gap:8px; padding:6px 8px; border:1px solid var(--border-color); border-radius:6px; cursor:pointer; background:#fff;">
+            <input type="checkbox" name="additional-crit" value="${c.id}" ${checked} onchange="enforceMaxAdditionalCriteria(this)">
+            <span>${escapeHtml(c.name)}</span>
+          </label>
+        `;
+      }
+
+      let signStatusHtml = emp.initialInterviewSignedAt
+        ? `<div class="alert-box alert-positive"><strong>e-Podpis rozmowy wstępnej złożony:</strong> ${escapeHtml(emp.initialInterviewSignedAt)}</div>`
+        : `<div class="alert-box alert-warning">Rozmowa wstępna i wybrane kryteria nie zostały jeszcze potwierdzone podpisem elektronicznym.</div>`;
+
+      document.getElementById("profile-tab-setup").innerHTML = `
+        <div class="card">
+          <h3>Rozmowa wstępna i wyznaczenie kryteriów (Część I arkusza)</h3>
+          <div class="alert-box ${isAfterNeg ? 'alert-negative' : 'alert-info'}">
+            <strong>Limit ustawowy na wyznaczenie kryteriów:</strong> ${limitDays} dni od startu cyklu (${escapeHtml(emp.cycleStartDate)}) &rarr; termin upływa: <strong>${deadline}</strong>.
+            ${isAfterNeg ? ' (Skrócony termin 7 dni z powodu poprzedniej oceny negatywnej!)' : ''}
+          </div>
+          ${signStatusHtml}
+
+          <div class="grid-2">
+            <div class="form-group">
+              <label for="setup-interview-date">Data rozmowy wstępnej</label>
+              <input type="date" id="setup-interview-date" value="${escapeHtml(emp.initialInterviewDate)}">
+            </div>
+            <div class="form-group">
+              <label for="setup-interview-notes">Notatki z rozmowy wstępnej (cele, oczekiwania)</label>
+              <textarea id="setup-interview-notes" placeholder="Zapisz ustalone cele i oczekiwania...">${escapeHtml(emp.initialInterviewNotes)}</textarea>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Kryteria obowiązkowe (dobrane automatycznie dla Arkusza ${emp.sheetType}):</label>
+            <ul style="margin-left:20px; margin-top:6px;">${mandatoryHtml}</ul>
+          </div>
+
+          <div class="form-group">
+            <label>Wybierz kryteria dodatkowe (maksymalnie ${LEGAL_CONFIG.maxAdditionalCriteria}):</label>
+            <div class="grid-2" style="margin-top:8px;">${additionalCheckboxesHtml}</div>
+          </div>
+
+          <div style="display:flex; flex-wrap:wrap; gap:10px;">
+            <button class="btn btn-primary" onclick="saveInitialInterviewSetup('${emp.id}', false)">Zapisz roboczo</button>
+            <button class="btn btn-positive" onclick="saveInitialInterviewSetup('${emp.id}', true)">Zapisz i dodaj e-podpis (Część I)</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function enforceMaxAdditionalCriteria(checkbox) {
+      let checked = document.querySelectorAll('input[name="additional-crit"]:checked');
+      if (checked.length > LEGAL_CONFIG.maxAdditionalCriteria) {
+        checkbox.checked = false;
+        showToast("Możesz wybrać maksymalnie " + LEGAL_CONFIG.maxAdditionalCriteria + " kryteria dodatkowe.", "error");
+      }
+    }
+
+    function saveInitialInterviewSetup(empId, withSignature) {
+      let emp = getUserById(empId);
+      if (!emp) return;
+      emp.initialInterviewDate = document.getElementById("setup-interview-date").value;
+      emp.initialInterviewNotes = document.getElementById("setup-interview-notes").value.trim();
+
+      let checked = document.querySelectorAll('input[name="additional-crit"]:checked');
+      let selectedIds = [];
+      for (let i = 0; i < checked.length; i++) {
+        selectedIds.push(Number(checked[i].value));
+      }
+      emp.additionalCriteriaIds = selectedIds;
+
+      if (withSignature) {
+        let now = new Date();
+        emp.initialInterviewSignedAt = now.toISOString().split("T")[0] + " " + now.toTimeString().slice(0, 5) + " (e-Podpis zatwierdzony)";
+        showToast("Zapisano i podpisano elektronicznie Część I arkusza!", "success");
+      } else {
+        showToast("Zapisano ustalenia rozmowy wstępnej.", "success");
+      }
+      renderProfileSetupTab(emp);
+    }
+
+    // --- ZAKŁADKA B: DZIENNIK ZADAŃ I TAGÓW (+ / - / DOBROSTAN) ---
+    function renderProfileTasksTab(emp) {
+      let tasks = getEmployeeTasks(emp.id);
+
+      let tagOptionsHtml = "";
+      for (let i = 0; i < TAGS_CATALOG.length; i++) {
+        tagOptionsHtml += `<option value="${TAGS_CATALOG[i].id}">${escapeHtml(TAGS_CATALOG[i].label)}</option>`;
+      }
+
+      let tasksListHtml = "";
+      if (tasks.length === 0) {
+        tasksListHtml = '<p class="text-muted">Brak dodanych zadań. Dodaj pierwsze zadanie powyżej, aby przypisywać tagi.</p>';
+      } else {
+        for (let i = 0; i < tasks.length; i++) {
+          let t = tasks[i];
+          let tagsHtml = "";
+          if (t.tags.length === 0) {
+            tagsHtml = '<p class="text-muted" style="font-size:12px;">Brak przypisanych tagów do tego zadania.</p>';
+          } else {
+            for (let j = 0; j < t.tags.length; j++) {
+              let tg = t.tags[j];
+              let def = getTagDefinition(tg.tagId);
+              let isWell = def && def.isWellbeing;
+              let isPos = tg.polarity === "pos";
+              let rowClass = isWell ? "wellbeing" : (isPos ? "pos" : "neg");
+              let colorVar = isWell ? "var(--wellbeing)" : (isPos ? "var(--positive)" : "var(--negative)");
+              let prefix = isWell ? "[HR] " : (isPos ? "(+) " : "(-) ");
+
+              tagsHtml += `
+                <div class="tag-row ${rowClass}">
+                  <strong style="color:${colorVar};">${prefix}${escapeHtml(tg.tagId)}</strong>
+                  <span>${escapeHtml(tg.comment || "Brak dodatkowego komentarza")}</span>
+                </div>
+              `;
+            }
+          }
+
+          tasksListHtml += `
+            <div class="task-item">
+              <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:6px;">
+                <strong>${escapeHtml(t.title)}</strong>
+                <span class="text-muted">${escapeHtml(t.date)}</span>
+              </div>
+              <p class="text-muted" style="margin-top:4px;">${escapeHtml(t.description)}</p>
+
+              <div class="task-tags-list">${tagsHtml}</div>
+
+              <div class="inline-tag-form">
+                <select id="tag-select-${t.id}">${tagOptionsHtml}</select>
+                <select id="tag-polarity-${t.id}" style="flex: 0 1 155px;">
+                  <option value="pos">(+) Strona dodatnia</option>
+                  <option value="neg">(-) Strona ujemna</option>
+                </select>
+                <input type="text" id="tag-comment-${t.id}" placeholder="Komentarz do taga (np. z czego wynika)...">
+                <button class="btn btn-sm btn-primary" onclick="addTagToTask('${t.id}')">+ Przypisz tag</button>
+              </div>
+            </div>
+          `;
+        }
+      }
+
+      document.getElementById("profile-tab-tasks").innerHTML = `
+        <div class="card">
+          <h3>Dodaj nowe wykonane zadanie</h3>
+          <form onsubmit="handleAddTask(event, '${emp.id}')">
+            <div class="grid-2">
+              <div class="form-group">
+                <label for="new-task-title">Tytuł zadania</label>
+                <input type="text" id="new-task-title" placeholder="np. Przygotowanie odpowiedzi na skargę" required>
+              </div>
+              <div class="form-group">
+                <label for="new-task-date">Data wykonania</label>
+                <input type="date" id="new-task-date" value="${new Date().toISOString().split('T')[0]}" required>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="new-task-desc">Krótki opis</label>
+              <input type="text" id="new-task-desc" placeholder="Krótki kontekst wykonanego zadania...">
+            </div>
+            <button type="submit" class="btn btn-primary">+ Dodaj zadanie do dziennika</button>
+          </form>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3>Dziennik zadań i przypisanych tagów (${tasks.length})</h3>
+            <span class="text-muted">Tagi automatycznie zasilają kryteria oraz klocki dowodowe w kreatorze oceny</span>
+          </div>
+          ${tasksListHtml}
+        </div>
+      `;
+    }
+
+    function handleAddTask(event, empId) {
+      event.preventDefault();
+      let title = document.getElementById("new-task-title").value.trim();
+      let date = document.getElementById("new-task-date").value;
+      let desc = document.getElementById("new-task-desc").value.trim();
+      if (!title) return;
+
+      state.tasks.unshift({
+        id: "t" + Date.now(),
+        employeeId: empId,
+        title: title,
+        date: date,
+        description: desc,
+        tags: []
+      });
+
+      showToast("Dodano nowe zadanie. Możesz teraz przypisać do niego tagi.", "success");
+      renderProfileTasksTab(getUserById(empId));
+    }
+
+    function addTagToTask(taskId) {
+      let tagId = document.getElementById("tag-select-" + taskId).value;
+      let polarity = document.getElementById("tag-polarity-" + taskId).value;
+      let comment = document.getElementById("tag-comment-" + taskId).value.trim();
+      let def = getTagDefinition(tagId);
+      if (def && def.isWellbeing) polarity = "neg"; // Tagi dobrostanowe oznaczamy jako sygnał ostrzegawczy
+
+      for (let i = 0; i < state.tasks.length; i++) {
+        if (state.tasks[i].id === taskId) {
+          state.tasks[i].tags.push({ tagId: tagId, polarity: polarity, comment: comment });
+          break;
+        }
+      }
+
+      showToast("Przypisano tag " + tagId, "success");
+      renderProfileTasksTab(getUserById(state.selectedEmployeeId));
+    }
+
+    /* ========================================================================
+       SEKCJA JS 9: KREATOR OCENY KOŃCOWEJ (WIZARD) + SPLIT SCREEN + PIGUŁKI IPRZ
+       ======================================================================== */
+    function renderProfileWizardTab(emp) {
+      let activeCriteria = getActiveCriteriaForEmployee(emp);
+      let totalSteps = activeCriteria.length + 1;
+      let currentStep = state.wizard.stepIndex;
+      let evaluator = getUserById(emp.evaluatorId) || getUserById(state.currentUserId);
+
+      let progressPct = Math.round(((currentStep + 1) / totalSteps) * 100);
+      let headerInfo = `
+        <div class="card" style="background: var(--bg-subtle);">
+          <div style="display:flex; flex-wrap:wrap; justify-content:space-between; gap:8px;">
+            <div><strong>Arkusz oceny ${emp.sheetType}</strong> &bull; Oceniany: ${escapeHtml(emp.name)} &bull; Oceniający: ${evaluator ? escapeHtml(evaluator.name) : "—"}</div>
+            <div><strong>Krok ${currentStep + 1} z ${totalSteps}</strong></div>
+          </div>
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill" style="width:${progressPct}%;"></div>
+          </div>
+        </div>
+      `;
+
+      // KROKI 1..N: OCENA POSZCZEGÓLNYCH KRYTERIÓW
+      if (currentStep < activeCriteria.length) {
+        let item = activeCriteria[currentStep];
+        let crit = getCriterionById(item.id);
+        let tagSummary = getTagSummaryForCriterion(emp.id, crit.id);
+        let selectedVal = state.wizard.scores[crit.id] || null;
+
+        let descHtml = '<ul class="criterion-desc-list">';
+        for (let i = 0; i < crit.descriptions.length; i++) {
+          descHtml += `<li>${escapeHtml(crit.descriptions[i])}</li>`;
+        }
+        descHtml += '</ul>';
+
+        let commentsHtml = "";
+        if (tagSummary.entries.length === 0) {
+          commentsHtml = '<p class="text-muted">Brak tagów z zadań powiązanych z tym kryterium w bieżącym okresie.</p>';
+        } else {
+          for (let i = 0; i < tagSummary.entries.length; i++) {
+            let e = tagSummary.entries[i];
+            let isPos = e.polarity === "pos";
+            commentsHtml += `
+              <div class="tag-row ${isPos ? 'pos' : 'neg'}" style="margin-bottom:6px;">
+                <strong style="color:${isPos ? 'var(--positive)' : 'var(--negative)'};">${isPos ? '(+)' : '(-)'} ${escapeHtml(e.tagId)}</strong>
+                <span><strong>${escapeHtml(e.taskTitle)}</strong> (${escapeHtml(e.taskDate)}): ${escapeHtml(e.comment || "—")}</span>
+              </div>
+            `;
+          }
+        }
+
+        let radiosHtml = "";
+        for (let i = 0; i < SCORE_SCALE.length; i++) {
+          let opt = SCORE_SCALE[i];
+          let isChecked = Number(selectedVal) === opt.value;
+          radiosHtml += `
+            <label class="score-radio-label ${isChecked ? 'selected' : ''}" onclick="selectWizardScore(${crit.id}, ${opt.value})">
+              <input type="radio" name="wizard-score" value="${opt.value}" ${isChecked ? 'checked' : ''}>
+              <span>${opt.label}</span>
+            </label>
+          `;
+        }
+
+        document.getElementById("profile-tab-wizard").innerHTML = headerInfo + `
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <span class="badge ${item.isMandatory ? 'badge-primary' : 'badge-warning'}" style="margin-bottom:6px;">
+                  ${item.isMandatory ? 'Kryterium obowiązkowe' : 'Kryterium dodatkowe'}
+                </span>
+                <h2>${currentStep + 1}. ${escapeHtml(crit.name)}</h2>
+              </div>
+            </div>
+
+            <h3>Oficjalny opis kryterium (Załącznik nr 1 do Rozporządzenia):</h3>
+            ${descHtml}
+
+            <div style="margin-top:16px; padding-top:14px; border-top:1px solid var(--border-color);">
+              <h3>Podsumowanie tagów z okresu oceny dla tego kryterium:</h3>
+              <div style="display:flex; gap:10px; margin:8px 0 12px;">
+                <span class="badge badge-positive" style="font-size:13px; padding:5px 12px;">Tagi dodatnie (+): ${tagSummary.posCount}</span>
+                <span class="badge badge-negative" style="font-size:13px; padding:5px 12px;">Tagi ujemne (-): ${tagSummary.negCount}</span>
+              </div>
+              ${commentsHtml}
+            </div>
+
+            <div class="alert-box alert-info" style="margin-top:14px;">
+              <strong>Wskazówka informacyjna Asystenta:</strong>
+              Na podstawie <strong>${tagSummary.posCount}</strong> tagów (+) i <strong>${tagSummary.negCount}</strong> tagów (-) bilans sugeruje poziom:
+              <strong>${tagSummary.suggestedLabel}</strong>.
+              <br><span style="font-size:12px;">Informacja ma charakter wyłącznie pomocniczy — ostateczną ocenę cząstkową wybierasz samodzielnie.</span>
+            </div>
+
+            <h3 style="margin-top:16px;">Wybierz ocenę cząstkową:</h3>
+            <div class="score-options">${radiosHtml}</div>
+
+            <div style="display:flex; justify-content:space-between; margin-top:20px; padding-top:14px; border-top:1px solid var(--border-color);">
+              <button class="btn" onclick="wizardPrevStep()" ${currentStep === 0 ? 'disabled' : ''}>&larr; Poprzednie kryterium</button>
+              <button class="btn btn-primary" onclick="wizardNextStep(${crit.id})">
+                ${currentStep === activeCriteria.length - 1 ? 'Przejdź do podsumowania &rarr;' : 'Następne kryterium &rarr;'}
+              </button>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      // OSTATNI KROK KREATORA: PODSUMOWANIE + SPLIT SCREEN + KLIKALNE PIGUŁKI IPRZ
+      let calc = calculateFinalResult(state.wizard.scores);
+
+      // Domyślny filtr klocków dowodowych: przy ocenie negatywnej podpowiadamy "Tylko -"
+      if (!state.wizard.evidenceFilter) {
+        state.wizard.evidenceFilter = (calc.result === "NEGATYWNA") ? "neg" : "all";
+      }
+
+      // Sprawdzenie reguły automatycznego awansu stopnia służbowego (po 2 ocenach > 6 pkt)
+      let pastEvals = getEmployeeEvaluations(emp.id);
+      let prevEval = pastEvals.length > 0 ? pastEvals[0] : null;
+      let autoRankPromotion = (
+        emp.employmentType === "MIANOWANIE" &&
+        emp.rank < 9 &&
+        calc.result === "POZYTYWNA" &&
+        calc.average > 6 &&
+        prevEval &&
+        prevEval.result === "POZYTYWNA" &&
+        prevEval.average > 6
+      );
+
+      let tableRows = "";
+      for (let i = 0; i < activeCriteria.length; i++) {
+        let c = getCriterionById(activeCriteria[i].id);
+        let sc = state.wizard.scores[c.id];
+        tableRows += `<tr>
+          <td>${escapeHtml(c.name)} ${activeCriteria[i].isMandatory ? '<span class="badge badge-primary">Obowiązkowe</span>' : '<span class="badge badge-warning">Dodatkowe</span>'}</td>
+          <td><strong>${sc} pkt</strong></td>
+        </tr>`;
+      }
+
+      let rankBlockHtml = "";
+      if (autoRankPromotion) {
+        rankBlockHtml = `
+          <div class="alert-box alert-positive">
+            <strong>Automatyczna zmiana stopnia służbowego (z mocy prawa):</strong>
+            Pracownik jest urzędnikiem mianowanym i uzyskał dwie kolejne oceny pozytywne powyżej 6 pkt
+            (poprzednia: ${prevEval.average} pkt, obecna: ${calc.average} pkt).
+            Po zatwierdzeniu stopień służbowy wzrośnie automatycznie ze <strong>${toRomanRank(emp.rank)}</strong> na <strong>${toRomanRank(emp.rank + 1)}</strong>!
+          </div>
+        `;
+      } else if (emp.employmentType === "MIANOWANIE" && calc.result === "POZYTYWNA" && emp.rank < 9) {
+        rankBlockHtml = `
+          <div class="alert-box alert-info">
+            <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-weight:600;">
+              <input type="checkbox" id="wizard-rank-checkbox" ${state.wizard.requestRankPromotion ? 'checked' : ''} onchange="state.wizard.requestRankPromotion = this.checked">
+              Dołącz fakultatywny wniosek o przyznanie kolejnego stopnia służbowego (stopień ${toRomanRank(emp.rank + 1)}) do Dyrektora Generalnego (Część III)
+            </label>
+          </div>
+        `;
+      }
+
+      // Przygotowanie prawej kolumny: Klocki dowodowe
+      let allEvidence = getAllEvidenceBlocksForEmployee(emp.id);
+      let filteredEvidence = [];
+      for (let i = 0; i < allEvidence.length; i++) {
+        let evBlock = allEvidence[i];
+        if (state.wizard.evidenceFilter === "all") filteredEvidence.push(evBlock);
+        else if (state.wizard.evidenceFilter === "pos" && evBlock.polarity === "pos") filteredEvidence.push(evBlock);
+        else if (state.wizard.evidenceFilter === "neg" && evBlock.polarity === "neg") filteredEvidence.push(evBlock);
+      }
+
+      let evidenceHtml = "";
+      if (filteredEvidence.length === 0) {
+        evidenceHtml = '<p class="text-muted" style="padding:10px;">Brak obserwacji spełniających wybrany filtr.</p>';
+      } else {
+        for (let i = 0; i < filteredEvidence.length; i++) {
+          let b = filteredEvidence[i];
+          let isChecked = state.wizard.selectedEvidenceKeys.indexOf(b.key) !== -1;
+          let cardTypeClass = b.isWellbeing ? "wellbeing" : (b.polarity === "pos" ? "pos" : "neg");
+          let tagBadgeClass = b.isWellbeing ? "badge-wellbeing" : (b.polarity === "pos" ? "badge-positive" : "badge-negative");
+          let signText = b.polarity === "pos" ? "+" : "-";
+
+          evidenceHtml += `
+            <label class="evidence-card ${cardTypeClass} ${isChecked ? 'checked' : ''}">
+              <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleEvidenceBlock('${emp.id}', '${b.key}', this.checked)">
+              <div style="flex:1;">
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:6px; flex-wrap:wrap;">
+                  <strong style="font-size:12px;">${escapeHtml(b.date)} &bull; ${escapeHtml(b.taskTitle)}</strong>
+                  <span class="badge ${tagBadgeClass}">${signText}${escapeHtml(b.tagId)}</span>
+                </div>
+                <div class="text-muted" style="font-size:12px; margin-top:4px;">„${escapeHtml(b.comment || "Brak komentarza")}”</div>
+              </div>
+            </label>
+          `;
+        }
+      }
+
+      // Przygotowanie smart-pigułek IPRZ dopasowanych do ocen cząstkowych
+      let iprzPills = buildSmartIprzPills(emp, activeCriteria);
+      let pillsHtml = "";
+      for (let i = 0; i < iprzPills.length; i++) {
+        let pText = iprzPills[i];
+        let isUsed = state.wizard.usedIprzPills.indexOf(pText) !== -1;
+        pillsHtml += `<button type="button" class="iprz-pill ${isUsed ? 'used' : ''}" onclick="appendIprzPill(${i})">${isUsed ? '&#10003; ' : '+ '}${escapeHtml(pText)}</button>`;
+      }
+
+      let legalBadgeHtml = calc.result === "NEGATYWNA"
+        ? '<span class="badge badge-negative">Uzasadnienie OBOWIĄZKOWE (wymagane do podpisu)</span>'
+        : '<span class="badge badge-positive">Uzasadnienie fakultatywne</span>';
+
+      document.getElementById("profile-tab-wizard").innerHTML = headerInfo + `
+        <div class="card">
+          <h2>Podsumowanie i zatwierdzenie oceny okresowej</h2>
+
+          <div class="table-wrap" style="margin:14px 0;">
+            <table>
+              <thead><tr><th>Kryterium oceny</th><th>Przyznana ocena cząstkowa</th></tr></thead>
+              <tbody>${tableRows}</tbody>
+            </table>
+          </div>
+
+          <div class="alert-box ${calc.result === 'POZYTYWNA' ? 'alert-positive' : 'alert-negative'}">
+            <strong>Średnia arytmetyczna:</strong> ${calc.average} pkt &bull;
+            <strong>Ogólny poziom:</strong> ${escapeHtml(calc.level)} &bull;
+            <strong>OCENA KOŃCOWA: ${calc.result}</strong>
+            ${calc.hasOnePoint ? '<br><em>Uwaga: Przyznano ocenę cząstkową 1 pkt (znacznie poniżej oczekiwań), co zgodnie z § 11 Rozporządzenia automatycznie skutkuje oceną NEGATYWNĄ.</em>' : ''}
+          </div>
+
+          ${rankBlockHtml}
+
+          <!-- UKŁAD DWUKOLUMNOWY (SPLIT SCREEN): UZASADNIENIE + KLOCKI DOWODOWE -->
+          <div class="split-screen">
+            <!-- LEWA KOLUMNA: POLE UZASADNIENIA I GENERATOR SZKICU -->
+            <div class="split-panel">
+              <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; margin-bottom:6px;">
+                <h3 style="margin:0;">Uzasadnienie oceny okresowej</h3>
+                ${legalBadgeHtml}
+              </div>
+              <p class="text-muted" style="font-size:12px;">Wygeneruj szybki szkic z ocen i tagów, a następnie zaznacz wybrane fakty po prawej stronie:</p>
+
+              <div class="draft-btn-group">
+                <button type="button" class="btn btn-sm" onclick="generateJustificationDraft('${emp.id}', 'general')">Ogólne podsumowanie</button>
+                <button type="button" class="btn btn-sm" onclick="generateJustificationDraft('${emp.id}', 'key')">Kluczowe obszary (+/-)</button>
+                <button type="button" class="btn btn-sm" onclick="generateJustificationDraft('${emp.id}', 'detailed')">Szczegółowe (wszystkie kryteria)</button>
+              </div>
+
+              <textarea id="wizard-justification" style="min-height:240px;"
+                placeholder="Kliknij jeden z przycisków powyżej lub zaznacz klocki dowodowe po prawej stronie, albo wpisz własny tekst..."
+                oninput="state.wizard.justification = this.value">${escapeHtml(state.wizard.justification)}</textarea>
+            </div>
+
+            <!-- PRAWA KOLUMNA: KLOCKI DOWODOWE (CHECKLISTA NOTATEK) -->
+            <div class="split-panel">
+              <h3 style="margin-bottom:4px;">Klocki dowodowe — Twoje notatki z okresu oceny</h3>
+              <p class="text-muted" style="font-size:12px;">
+                Zaznaczenie <strong>[x]</strong> dopisuje konkretny fakt z datą do uzasadnienia. Odznaczenie usuwa tylko tę linijkę.
+              </p>
+
+              <div class="evidence-filters">
+                <button type="button" class="filter-btn ${state.wizard.evidenceFilter === 'all' ? 'active' : ''}" onclick="setEvidenceFilter('all')">Wszystkie (${allEvidence.length})</button>
+                <button type="button" class="filter-btn ${state.wizard.evidenceFilter === 'pos' ? 'active' : ''}" onclick="setEvidenceFilter('pos')">Tylko +</button>
+                <button type="button" class="filter-btn ${state.wizard.evidenceFilter === 'neg' ? 'active' : ''}" onclick="setEvidenceFilter('neg')">Tylko -</button>
+              </div>
+
+              <div class="evidence-scroll-list">
+                ${evidenceHtml}
+              </div>
+            </div>
+          </div>
+
+          <!-- KLIKALNE PIGUŁKI IPRZ -->
+          <div class="form-group" style="margin-top:16px; padding-top:14px; border-top:1px solid var(--border-color);">
+            <label for="wizard-iprz">Wnioski dotyczące Indywidualnego Programu Rozwoju Zawodowego (IPRZ)</label>
+            <p class="text-muted" style="font-size:12px;">Kliknij wybrane smart-propozycje dopasowane do wyników pracownika, aby dopisać je do planu rozwoju:</p>
+            <div class="iprz-pills-wrap">${pillsHtml}</div>
+            <textarea id="wizard-iprz" style="min-height:90px;"
+              placeholder="Zaproponuj kierunki rozwoju, szkolenia, mentoring..."
+              oninput="state.wizard.iprz = this.value">${escapeHtml(state.wizard.iprz)}</textarea>
+          </div>
+
+          <div style="display:flex; flex-wrap:wrap; justify-content:space-between; gap:10px; margin-top:18px; padding-top:14px; border-top:1px solid var(--border-color);">
+            <button class="btn" onclick="wizardPrevStep()">&larr; Wróć do kryteriów</button>
+            <div style="display:flex; flex-wrap:wrap; gap:8px;">
+              <button class="btn" onclick="printDraftWizardEvaluation('${emp.id}')">Drukuj / Zapisz jako PDF</button>
+              <button class="btn btn-positive" onclick="finalizeWizardEvaluation('${emp.id}', ${autoRankPromotion})">Podpisz elektronicznie i wystaw ocenę</button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // --- LOGIKA GENERATORA SZKICU UZASADNIENIA (3 TRYBY) ---
+    function generateJustificationDraft(empId, mode) {
+      let emp = getUserById(empId);
+      let activeCriteria = getActiveCriteriaForEmployee(emp);
+      let calc = calculateFinalResult(state.wizard.scores);
+
+      // Zachowaj aktualnie zaznaczone klocki dowodowe, aby nie zniknęły po wygenerowaniu szkicu
+      let allEvidence = getAllEvidenceBlocksForEmployee(empId);
+      let existingBullets = [];
+      for (let i = 0; i < allEvidence.length; i++) {
+        if (state.wizard.selectedEvidenceKeys.indexOf(allEvidence[i].key) !== -1) {
+          existingBullets.push(allEvidence[i].formattedLine);
+        }
+      }
+
+      let draftText = "";
+
+      if (mode === "general") {
+        draftText = "W okresie podlegającym ocenie pracownik uzyskał średnią arytmetyczną " + calc.average +
+          " pkt, co odpowiada ogólnemu poziomowi: " + calc.level.toLowerCase() +
+          " (ocena okresowa: " + calc.result + "). " +
+          (calc.result === "POZYTYWNA"
+            ? "Realizacja głównych obowiązków na stanowisku " + emp.position + " przebiegała zgodnie z oczekiwaniami i standardami służby cywilnej."
+            : "W ocenianym okresie wystąpiły istotne obszary wymagające pilnej poprawy w zakresie realizacji obowiązków na stanowisku " + emp.position + ".");
+      } else if (mode === "key") {
+        // Znajdź najwyżej i najniżej ocenione kryteria
+        let maxScore = -1;
+        let minScore = 99;
+        for (let i = 0; i < activeCriteria.length; i++) {
+          let sc = Number(state.wizard.scores[activeCriteria[i].id] || 5);
+          if (sc > maxScore) maxScore = sc;
+          if (sc < minScore) minScore = sc;
+        }
+        let strongest = [];
+        let weakest = [];
+        for (let i = 0; i < activeCriteria.length; i++) {
+          let c = getCriterionById(activeCriteria[i].id);
+          let sc = Number(state.wizard.scores[c.id] || 5);
+          let sum = getTagSummaryForCriterion(emp.id, c.id);
+          if (sc === maxScore) strongest.push(c.name + " (" + sc + " pkt, tagi: +" + sum.posCount + "/-" + sum.negCount + ")");
+          if (sc === minScore && sc < maxScore) weakest.push(c.name + " (" + sc + " pkt, tagi: +" + sum.posCount + "/-" + sum.negCount + ")");
+        }
+
+        draftText = "Ocena okresowa (" + calc.result + ", średnia " + calc.average + " pkt — " + calc.level.toLowerCase() + ").\n" +
+          "Mocne strony: " + strongest.join(", ") + ".";
+        if (weakest.length > 0) {
+          draftText += "\nObszary wymagające wsparcia lub poprawy: " + weakest.join(", ") + ".";
+        }
+      } else if (mode === "detailed") {
+        let lines = [
+          "Szczegółowe uzasadnienie oceny okresowej (" + calc.result + ", średnia " + calc.average + " pkt — " + calc.level.toLowerCase() + "):"
+        ];
+        for (let i = 0; i < activeCriteria.length; i++) {
+          let c = getCriterionById(activeCriteria[i].id);
+          let sc = state.wizard.scores[c.id];
+          let sum = getTagSummaryForCriterion(emp.id, c.id);
+          lines.push("- " + c.name + ": " + sc + " pkt (zebrane obserwacje: " + sum.posCount + " pozytywnych, " + sum.negCount + " do poprawy).");
+        }
+        draftText = lines.join("\n");
+      }
+
+      if (existingBullets.length > 0) {
+        draftText += "\n\nPrzykłady potwierdzające ocenę:\n" + existingBullets.join("\n");
+      }
+
+      state.wizard.justification = draftText;
+      let ta = document.getElementById("wizard-justification");
+      if (ta) ta.value = draftText;
+      showToast("Wygenerowano szkic uzasadnienia na podstawie ocen i tagów.", "success");
+    }
+
+    // --- LOGIKA CHECKBOXÓW KLOCKÓW DOWODOWYCH (ZACHOWUJE RĘCZNY TEKST!) ---
+    function setEvidenceFilter(filterVal) {
+      state.wizard.evidenceFilter = filterVal;
+      renderProfileWizardTab(getUserById(state.selectedEmployeeId));
+    }
+
+    function toggleEvidenceBlock(empId, blockKey, isChecked) {
+      let allEvidence = getAllEvidenceBlocksForEmployee(empId);
+      let targetBlock = null;
+      for (let i = 0; i < allEvidence.length; i++) {
+        if (allEvidence[i].key === blockKey) {
+          targetBlock = allEvidence[i];
+          break;
+        }
+      }
+      if (!targetBlock) return;
+
+      let ta = document.getElementById("wizard-justification");
+      let currentText = ta ? ta.value : state.wizard.justification;
+      let headerMarker = "Przykłady potwierdzające ocenę:";
+
+      if (isChecked) {
+        if (state.wizard.selectedEvidenceKeys.indexOf(blockKey) === -1) {
+          state.wizard.selectedEvidenceKeys.push(blockKey);
+        }
+        if (currentText.indexOf(targetBlock.formattedLine) === -1) {
+          if (currentText.indexOf(headerMarker) === -1) {
+            let sep = currentText.trim().length > 0 ? "\n\n" : "";
+            currentText = currentText.trimEnd() + sep + headerMarker + "\n" + targetBlock.formattedLine;
+          } else {
+            currentText = currentText.trimEnd() + "\n" + targetBlock.formattedLine;
+          }
+        }
+      } else {
+        // Usuń klucz z zaznaczonych
+        let nextKeys = [];
+        for (let i = 0; i < state.wizard.selectedEvidenceKeys.length; i++) {
+          if (state.wizard.selectedEvidenceKeys[i] !== blockKey) {
+            nextKeys.push(state.wizard.selectedEvidenceKeys[i]);
+          }
+        }
+        state.wizard.selectedEvidenceKeys = nextKeys;
+
+        // Usuń dokładnie tę jedną linijkę z pola textarea, nie ruszając ręcznego tekstu
+        let rawLines = currentText.split("\n");
+        let keptLines = [];
+        for (let i = 0; i < rawLines.length; i++) {
+          if (rawLines[i].trim() !== targetBlock.formattedLine.trim()) {
+            keptLines.push(rawLines[i]);
+          }
+        }
+        currentText = keptLines.join("\n").replace(/\n{3,}/g, "\n\n").trimEnd();
+
+        // Jeśli nie zostały już żadne zaznaczone klocki i na samym końcu wisi sam nagłówek, usuń pusty nagłówek
+        if (state.wizard.selectedEvidenceKeys.length === 0 && currentText.endsWith(headerMarker)) {
+          currentText = currentText.slice(0, currentText.length - headerMarker.length).trimEnd();
+        }
+      }
+
+      state.wizard.justification = currentText;
+      renderProfileWizardTab(getUserById(empId));
+    }
+
+    // --- LOGIKA KLIKALNYCH PIGUŁEK IPRZ ---
+    let currentRenderedIprzPills = [];
+
+    function buildSmartIprzPills(emp, activeCriteria) {
+      let pills = [];
+      let lowCriteriaIds = [];
+
+      for (let i = 0; i < activeCriteria.length; i++) {
+        let cid = activeCriteria[i].id;
+        let sc = Number(state.wizard.scores[cid] || 5);
+        let sum = getTagSummaryForCriterion(emp.id, cid);
+        if (sc <= 5 || sum.negCount > 0) {
+          lowCriteriaIds.push(cid);
+        }
+      }
+
+      for (let i = 0; i < lowCriteriaIds.length; i++) {
+        let txt = IPRZ_SUGGESTIONS_BY_CRITERION[lowCriteriaIds[i]];
+        if (txt && pills.indexOf(txt) === -1) pills.push(txt);
+      }
+
+      // Jeśli pracownik ma same wysokie oceny (7 lub 9), podpowiedz ścieżkę ekspercką / mentorską
+      if (pills.length === 0) {
+        pills.push("Pełnienie roli mentora dla nowo zatrudnionych pracowników w wydziale.");
+        pills.push("Udział w zespołach projektowych międzywydziałowych i wymianie dobrych praktyk.");
+        pills.push("Szkolenie rozwijające kompetencje liderskie i zarządzanie projektami.");
+      } else {
+        pills.push("Regularny mentoring przełożonego oraz bieżący feedback co 2 tygodnie.");
+      }
+
+      currentRenderedIprzPills = pills;
+      return pills;
+    }
+
+    function appendIprzPill(pillIndex) {
+      let pillText = currentRenderedIprzPills[pillIndex];
+      if (!pillText) return;
+
+      let ta = document.getElementById("wizard-iprz");
+      let currentText = ta ? ta.value : state.wizard.iprz;
+
+      if (currentText.indexOf(pillText) === -1) {
+        let sep = currentText.trim().length > 0 ? "\n" : "";
+        currentText = currentText.trimEnd() + sep + "• " + pillText;
+      }
+
+      if (state.wizard.usedIprzPills.indexOf(pillText) === -1) {
+        state.wizard.usedIprzPills.push(pillText);
+      }
+
+      state.wizard.iprz = currentText;
+      renderProfileWizardTab(getUserById(state.selectedEmployeeId));
+    }
+
+    function selectWizardScore(criterionId, val) {
+      state.wizard.scores[criterionId] = val;
+      renderProfileWizardTab(getUserById(state.selectedEmployeeId));
+    }
+
+    function wizardPrevStep() {
+      if (state.wizard.stepIndex > 0) {
+        state.wizard.stepIndex--;
+        renderProfileWizardTab(getUserById(state.selectedEmployeeId));
+      }
+    }
+
+    function wizardNextStep(currentCriterionId) {
+      if (!state.wizard.scores[currentCriterionId]) {
+        showToast("Wybierz ocenę cząstkową (1, 3, 5, 7 lub 9 pkt) przed przejściem dalej.", "error");
+        return;
+      }
+      state.wizard.stepIndex++;
+      renderProfileWizardTab(getUserById(state.selectedEmployeeId));
+    }
+
+    function finalizeWizardEvaluation(empId, autoRankPromotion) {
+      let emp = getUserById(empId);
+      let calc = calculateFinalResult(state.wizard.scores);
+      let justif = document.getElementById("wizard-justification").value.trim();
+      let iprz = document.getElementById("wizard-iprz").value.trim();
+
+      if (calc.result === "NEGATYWNA" && !justif) {
+        showToast("Blokada podpisu: przy ocenie NEGATYWNEJ uzasadnienie jest obowiązkowe!", "error");
+        return;
+      }
+
+      let now = new Date();
+      let dateStr = now.toISOString().split("T")[0];
+      let timeStr = now.toTimeString().slice(0, 5);
+      let newEvalId = "ev" + Date.now();
+
+      state.evaluations.unshift({
+        id: newEvalId,
+        employeeId: emp.id,
+        evaluatorId: state.currentUserId,
+        sheetType: emp.sheetType,
+        date: dateStr,
+        average: calc.average,
+        level: calc.level,
+        result: calc.result,
+        scores: Object.assign({}, state.wizard.scores),
+        justification: justif,
+        iprz: iprz,
+        signedAt: dateStr + " " + timeStr + " (e-Podpis zatwierdzony)",
+        appealStatus: null
+      });
+
+      if (autoRankPromotion) {
+        emp.rank = emp.rank + 1;
+        showToast("Ocena wystawiona! Stopień służbowy automatycznie podniesiony na: " + toRomanRank(emp.rank), "success");
+      } else if (state.wizard.requestRankPromotion) {
+        state.rankRequests.unshift({
+          id: "rr" + Date.now(),
+          employeeId: emp.id,
+          evaluatorId: state.currentUserId,
+          evaluationId: newEvalId,
+          requestedRank: emp.rank + 1,
+          motivation: justif || "Pozytywna ocena okresowa oraz wysokie zaangażowanie.",
+          status: "OCZEKUJACY",
+          decisionNote: ""
+        });
+        showToast("Ocena wystawiona i wysłano wniosek o stopień służbowy do Dyrektora!", "success");
+      } else {
+        showToast("Podpisano elektronicznie i wystawiono ocenę okresową!", "success");
+      }
+
+      state.selectedEmployeeId = null;
+      state.managerActiveTab = "history";
+      renderApp();
+    }
+
+    /* ========================================================================
+       SEKCJA JS 10: WYDRUK / EKSPORT PDF ARKUSZA OCENY
+       ======================================================================== */
+    function printEvaluationById(evalId) {
+      let ev = null;
+      for (let i = 0; i < state.evaluations.length; i++) {
+        if (state.evaluations[i].id === evalId) { ev = state.evaluations[i]; break; }
+      }
+      if (!ev) return;
+      let emp = getUserById(ev.employeeId);
+      let evalUser = getUserById(ev.evaluatorId);
+      renderPrintSheet(emp, evalUser, ev);
+      window.print();
+    }
+
+    function printDraftWizardEvaluation(empId) {
+      let emp = getUserById(empId);
+      let evalUser = getUserById(state.currentUserId);
+      let calc = calculateFinalResult(state.wizard.scores);
+      let draftEv = {
+        sheetType: emp.sheetType,
+        date: new Date().toISOString().split("T")[0],
+        average: calc.average,
+        level: calc.level,
+        result: calc.result,
+        scores: state.wizard.scores,
+        justification: document.getElementById("wizard-justification").value,
+        iprz: document.getElementById("wizard-iprz").value,
+        signedAt: "Projekt arkusza (do podpisu)"
+      };
+      renderPrintSheet(emp, evalUser, draftEv);
+      window.print();
+    }
+
+    function renderPrintSheet(emp, evalUser, ev) {
+      let rows = "";
+      let keys = Object.keys(ev.scores);
+      for (let i = 0; i < keys.length; i++) {
+        let c = getCriterionById(Number(keys[i]));
+        rows += `<tr><td>${c ? escapeHtml(c.name) : keys[i]}</td><td>${ev.scores[keys[i]]} pkt</td></tr>`;
+      }
+
+      document.getElementById("print-sheet-area").innerHTML = `
+        <h2 style="text-align:center;">ARKUSZ ${ev.sheetType} — OCENA OKRESOWA W SŁUŻBIE CYWILNEJ</h2>
+        <p style="text-align:center; margin-bottom:16px;">Wygenerowano przez Cyfrowego Asystenta Ocen Okresowych</p>
+        <p><strong>Oceniany:</strong> ${emp ? escapeHtml(emp.name) + ' — ' + escapeHtml(emp.position) : ''}</p>
+        <p><strong>Oceniający:</strong> ${evalUser ? escapeHtml(evalUser.name) + ' — ' + escapeHtml(evalUser.position) : ''}</p>
+        <p><strong>Data sporządzenia:</strong> ${escapeHtml(ev.date)}</p>
+        <table>
+          <thead><tr><th>Kryterium</th><th>Ocena cząstkowa</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+        <p><strong>Średnia arytmetyczna:</strong> ${ev.average} pkt (${escapeHtml(ev.level)})</p>
+        <p><strong>Ocena okresowa:</strong> ${ev.result}</p>
+        <p style="margin-top:10px; white-space:pre-line;"><strong>Uzasadnienie:</strong><br>${escapeHtml(ev.justification || "—")}</p>
+        <p style="margin-top:10px; white-space:pre-line;"><strong>Wnioski do IPRZ:</strong><br>${escapeHtml(ev.iprz || "—")}</p>
+        <p style="margin-top:24px;"><strong>Podpis elektroniczny:</strong> ${escapeHtml(ev.signedAt)}</p>
+      `;
+    }
+
+    /* ========================================================================
+       SEKCJA JS 11: PANEL DYREKTORA GENERALNEGO (ODWOŁANIA I WNIOSKI)
+       ======================================================================== */
+    function setDirectorTab(tabName) {
+      state.directorActiveTab = tabName;
+      renderApp();
+    }
+
+    function renderDirectorPanel(directorUser) {
+      let tabs = document.getElementById("director-main-tabs").querySelectorAll(".tab-btn");
+      tabs[0].classList.toggle("active", state.directorActiveTab === "requests");
+      tabs[1].classList.toggle("active", state.directorActiveTab === "team");
+
+      let subReq = document.getElementById("director-subview-requests");
+      let subTeam = document.getElementById("director-subview-team");
+      subReq.classList.add("hidden");
+      subTeam.classList.add("hidden");
+
+      if (state.directorActiveTab === "team") {
+        subTeam.classList.remove("hidden");
+        renderSubordinatesList(directorUser.id, "director-team-mount");
+        return;
+      }
+
+      subReq.classList.remove("hidden");
+
+      let appealsHtml = "";
+      if (state.appeals.length === 0) {
+        appealsHtml = '<p class="text-muted">Brak złożonych odwołań od ocen okresowych. (Możesz złożyć testowe odwołanie z konta Anny Nowak lub Tomasza Mazura).</p>';
+      } else {
+        for (let i = 0; i < state.appeals.length; i++) {
+          let ap = state.appeals[i];
+          let emp = getUserById(ap.employeeId);
+          let evUser = getUserById(ap.evaluatorId);
+          let actionHtml = ap.status === "OCZEKUJACE" ? `
+            <div class="form-group" style="margin-top:10px;">
+              <label>Uzasadnienie decyzji Dyrektora:</label>
+              <input type="text" id="dir-appeal-note-${ap.id}" placeholder="Wpisz motywację decyzji...">
+            </div>
+            <div style="display:flex; gap:8px;">
+              <button class="btn btn-positive btn-sm" onclick="decideAppeal('${ap.id}', 'UWZGLEDNIONE')">Uwzględnij odwołanie</button>
+              <button class="btn btn-negative btn-sm" onclick="decideAppeal('${ap.id}', 'ODRZUCONE')">Odrzuć odwołanie</button>
+            </div>
+          ` : `<p style="margin-top:8px;"><strong>Decyzja Dyrektora:</strong> ${escapeHtml(ap.status)} — ${escapeHtml(ap.directorNote)}</p>`;
+
+          appealsHtml += `
+            <div class="task-item">
+              <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:6px;">
+                <strong>Sprzeciw pracownika: ${emp ? escapeHtml(emp.name) : "—"}</strong>
+                <span class="badge ${ap.status === 'OCZEKUJACE' ? 'badge-warning' : 'badge-primary'}">${ap.status}</span>
+              </div>
+              <p class="text-muted">Oceniający: ${evUser ? escapeHtml(evUser.name) : "—"} &bull; Data złożenia: ${escapeHtml(ap.date)}</p>
+              <p style="margin-top:6px;"><strong>Treść sprzeciwu:</strong> ${escapeHtml(ap.reason)}</p>
+              ${actionHtml}
+            </div>
+          `;
+        }
+      }
+
+      let rankHtml = "";
+      if (state.rankRequests.length === 0) {
+        rankHtml = '<p class="text-muted">Brak wniosków o przyznanie kolejnego stopnia służbowego.</p>';
+      } else {
+        for (let i = 0; i < state.rankRequests.length; i++) {
+          let rr = state.rankRequests[i];
+          let emp = getUserById(rr.employeeId);
+          let actionHtml = rr.status === "OCZEKUJACY" ? `
+            <div style="display:flex; gap:8px; margin-top:10px;">
+              <button class="btn btn-positive btn-sm" onclick="decideRankRequest('${rr.id}', 'ZATWIERDZONY')">Zatwierdź stopień ${toRomanRank(rr.requestedRank)}</button>
+              <button class="btn btn-negative btn-sm" onclick="decideRankRequest('${rr.id}', 'ODRZUCONY')">Odrzuć wniosek</button>
+            </div>
+          ` : `<p style="margin-top:6px;"><strong>Status decyzji:</strong> ${rr.status}</p>`;
+
+          rankHtml += `
+            <div class="task-item">
+              <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:6px;">
+                <strong>Wniosek o stopień ${toRomanRank(rr.requestedRank)} dla: ${emp ? escapeHtml(emp.name) : "—"}</strong>
+                <span class="badge ${rr.status === 'OCZEKUJACY' ? 'badge-warning' : 'badge-positive'}">${rr.status}</span>
+              </div>
+              <p style="margin-top:6px;"><strong>Umotywowanie przełożonego:</strong> ${escapeHtml(rr.motivation)}</p>
+              ${actionHtml}
+            </div>
+          `;
+        }
+      }
+
+      subReq.innerHTML = `
+        <div class="card">
+          <div class="card-header"><h2>Odwołania (sprzeciwy) od ocen okresowych</h2></div>
+          ${appealsHtml}
+        </div>
+        <div class="card">
+          <div class="card-header"><h2>Wnioski o przyznanie kolejnego stopnia służbowego</h2></div>
+          ${rankHtml}
+        </div>
+      `;
+    }
+
+    function decideAppeal(appealId, decision) {
+      for (let i = 0; i < state.appeals.length; i++) {
+        if (state.appeals[i].id === appealId) {
+          let noteEl = document.getElementById("dir-appeal-note-" + appealId);
+          state.appeals[i].status = decision;
+          state.appeals[i].directorNote = noteEl ? noteEl.value.trim() : "";
+
+          for (let j = 0; j < state.evaluations.length; j++) {
+            if (state.evaluations[j].id === state.appeals[i].evaluationId) {
+              state.evaluations[j].appealStatus = decision + (state.appeals[i].directorNote ? " (" + state.appeals[i].directorNote + ")" : "");
+              break;
+            }
+          }
+          break;
+        }
+      }
+      showToast("Zapisano decyzję Dyrektora w sprawie odwołania: " + decision, "success");
+      renderApp();
+    }
+
+    function decideRankRequest(reqId, decision) {
+      for (let i = 0; i < state.rankRequests.length; i++) {
+        if (state.rankRequests[i].id === reqId) {
+          state.rankRequests[i].status = decision;
+          if (decision === "ZATWIERDZONY") {
+            let emp = getUserById(state.rankRequests[i].employeeId);
+            if (emp) emp.rank = state.rankRequests[i].requestedRank;
+          }
+          break;
+        }
+      }
+      showToast("Decyzja w sprawie stopnia służbowego: " + decision, "success");
+      renderApp();
+    }
+
+    /* ========================================================================
+       SEKCJA JS 12: PANEL ADMINISTRATORA (ZARZĄDZANIE UŻYTKOWNIKAMI)
+       ======================================================================== */
+    function toggleRankInput() {
+      let val = document.getElementById("new-employment").value;
+      document.getElementById("new-rank-group").style.display = (val === "MIANOWANIE") ? "block" : "none";
+    }
+
+    function renderAdminPanel() {
+      let evalSelect = document.getElementById("new-evaluator");
+      let optHtml = '<option value="">Brak (np. Dyrektor Generalny)</option>';
+      for (let i = 0; i < state.users.length; i++) {
+        let u = state.users[i];
+        if (u.role === "OCENIAJACY" || u.role === "DYREKTOR") {
+          optHtml += `<option value="${u.id}">${escapeHtml(u.name)} (${u.role})</option>`;
+        }
+      }
+      evalSelect.innerHTML = optHtml;
+
+      let rows = "";
+      for (let i = 0; i < state.users.length; i++) {
+        let u = state.users[i];
+        let evalOptions = '<option value="">Brak</option>';
+        for (let j = 0; j < state.users.length; j++) {
+          let cand = state.users[j];
+          if (cand.id === u.id) continue;
+          if (cand.role === "OCENIAJACY" || cand.role === "DYREKTOR") {
+            let sel = (u.evaluatorId === cand.id) ? "selected" : "";
+            evalOptions += `<option value="${cand.id}" ${sel}>${escapeHtml(cand.name)}</option>`;
+          }
+        }
+
+        rows += `<tr>
+          <td><strong>${escapeHtml(u.name)}</strong><br><span class="text-muted">${escapeHtml(u.position)}</span></td>
+          <td><span class="badge badge-primary">${u.role}</span></td>
+          <td>Arkusz ${u.sheetType}</td>
+          <td>${u.employmentType === "MIANOWANIE" ? "Mianowany (st. " + toRomanRank(u.rank) + ")" : "Umowa nieokreślona"}</td>
+          <td>
+            <select onchange="adminChangeEvaluator('${u.id}', this.value)" style="min-width:170px;">
+              ${evalOptions}
+            </select>
+          </td>
+        </tr>`;
+      }
+
+      document.getElementById("admin-users-table").innerHTML = `
+        <table>
+          <thead><tr><th>Użytkownik i stanowisko</th><th>Rola</th><th>Arkusz</th><th>Zatrudnienie</th><th>Przypisany oceniający</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      `;
+    }
+
+    function handleAdminAddUser(event) {
+      event.preventDefault();
+      let name = document.getElementById("new-name").value.trim();
+      let pos = document.getElementById("new-position").value.trim();
+      let sheet = document.getElementById("new-sheet-type").value;
+      let role = document.getElementById("new-role").value;
+      let empType = document.getElementById("new-employment").value;
+      let rank = empType === "MIANOWANIE" ? Number(document.getElementById("new-rank").value) : null;
+      let evaluatorId = document.getElementById("new-evaluator").value || null;
+
+      let today = new Date().toISOString().split("T")[0];
+      let endCycle = addDaysToDate(today, 730);
+
+      state.users.push({
+        id: "u" + Date.now(),
+        name: name,
+        position: pos,
+        department: "Nowa komórka organizacyjna",
+        sheetType: sheet,
+        role: role,
+        employmentType: empType,
+        rank: rank,
+        evaluatorId: evaluatorId,
+        cycleStartDate: today,
+        cycleEndDate: endCycle,
+        initialInterviewDate: "",
+        initialInterviewSignedAt: "",
+        initialInterviewNotes: "",
+        additionalCriteriaIds: []
+      });
+
+      document.getElementById("admin-add-user-form").reset();
+      toggleRankInput();
+      showToast("Dodano użytkownika: " + name + " (Arkusz " + sheet + ")", "success");
+      renderApp();
+    }
+
+    function adminChangeEvaluator(userId, newEvaluatorId) {
+      let u = getUserById(userId);
+      if (u) {
+        u.evaluatorId = newEvaluatorId || null;
+        showToast("Zmieniono oceniającego dla: " + u.name, "success");
+      }
+    }
+
+    // Start aplikacji
+    window.addEventListener("DOMContentLoaded", function() {
+      renderApp();
+    });
+  </script>
+</body>
+</html>
