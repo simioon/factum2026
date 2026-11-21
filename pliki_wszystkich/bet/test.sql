@@ -7,8 +7,12 @@ CREATE TABLE uzytkownicy (
     id SERIAL PRIMARY KEY,
     imie_nazwisko VARCHAR(100) NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
-    stanowisko CHAR(1) CHECK (stanowisko IN ('A', 'B', 'C')), -- NULL to dyrektor generalny
+    arkusz CHAR(1) CHECK (arkusz IN ('A', 'B', 'C')), -- NULL to dyrektor generalny lub admin
+    rola VARCHAR(20) CHECK (rola IN ('OCENIANY', 'OCENIAJACY', 'DYREKTOR', 'ADMIN')),
+    haslo_hash VARCHAR(255) NOT NULL,
     aktualny_stopien_sluzbowy INT NOT NULL DEFAULT 0 CHECK (aktualny_stopien_sluzbowy BETWEEN 0 AND 9),
+    nazwa_stanowiska VARCHAR(100) NOT NULL,
+    komorka_organizacyjna VARCHAR(100) NOT NULL,
     przelozony_id INT REFERENCES uzytkownicy(id) ON DELETE SET NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -17,11 +21,17 @@ CREATE TABLE uzytkownicy (
 -- jakie kryteria są wymagane w danym arkuszu oceny (A, B, C) i czy są obowiązkowe czy dodatkowe
 CREATE TABLE slownik_kryteriow (
     id SERIAL PRIMARY KEY,
-    kod_arkusza CHAR(1) CHECK (kod_arkusza IN ('A', 'B', 'C')), -- NULL oznacza kryterium wspólne
-    typ_kryterium VARCHAR(20) NOT NULL CHECK (typ_kryterium IN ('OBOWIAZKOWE', 'DODATKOWE')),
     nazwa VARCHAR(150) NOT NULL,
     opis TEXT NOT NULL,
     czy_aktywne BOOLEAN DEFAULT TRUE
+);
+
+CREATE TABLE arkusz_kryteria (
+    id SERIAL PRIMARY KEY,
+    kod_arkusza CHAR(1) CHECK (kod_arkusza IN ('A', 'B', 'C')),
+    kryterium_id INT NOT NULL REFERENCES slownik_kryteriow(id) ON DELETE RESTRICT,
+    typ_kryterium VARCHAR(20) NOT NULL CHECK (typ_kryterium IN ('OBOWIAZKOWE', 'DODATKOWE')),
+    UNIQUE (kod_arkusza, kryterium_id)
 );
 
 -- 3. OCENY OKRESOWE (Główna tabela procesu)
@@ -91,9 +101,51 @@ CREATE TABLE ocena_kryteria_wyniki (
     UNIQUE (ocena_id, kryterium_id)
 );
 
--- 5. NOTATKI I OBSERWACJE W TRAKCIE CYKLU
+-- 5. ZADANIA, UNIWERSALNE TAGI (+/-) I MAPOWANIE NA KRYTERIA
 
--- na razie notki ignorujemy bo jeszcze będziemy to zmieniać
+-- Słownik uniwersalnych tagów (komunikacja, zadania, zarządzanie + dobrostan)
+CREATE TABLE slownik_tagow (
+    id SERIAL PRIMARY KEY,
+    nazwa VARCHAR(60) UNIQUE NOT NULL,        -- np. '#JasnyPrzekaz', '#Przeciążenie'
+    kategoria VARCHAR(40) NOT NULL CHECK (kategoria IN (
+        'KOMPETENCYJNY',
+        'DOBROSTAN'                           -- nie obniża oceny, odpala alerty HR Partnera
+    )),
+    opis TEXT,
+    czy_aktywny BOOLEAN DEFAULT TRUE
+);
+
+-- Relacja wiele-do-wielu: które kryteria zasila dany tag
+CREATE TABLE tag_kryteria (
+    tag_id INT NOT NULL REFERENCES slownik_tagow(id) ON DELETE CASCADE,
+    kryterium_id INT NOT NULL REFERENCES slownik_kryteriow(id) ON DELETE CASCADE,
+    PRIMARY KEY (tag_id, kryterium_id)
+);
+
+-- Zadania / obserwacje dodawane przez przełożonego w trakcie 24 miesięcy
+CREATE TABLE zadania_obserwacje (
+    id SERIAL PRIMARY KEY,
+    ocena_id INT NOT NULL REFERENCES oceny_okresowe(id) ON DELETE CASCADE,
+    autor_id INT NOT NULL REFERENCES uzytkownicy(id) ON DELETE RESTRICT,
+    tytul VARCHAR(200) NOT NULL,
+    opis TEXT,
+    data_zdarzenia DATE NOT NULL DEFAULT CURRENT_DATE,
+    widocznosc VARCHAR(20) NOT NULL DEFAULT 'OBIE_STRONY' CHECK (widocznosc IN (
+        'TYLKO_MENEDZER',
+        'OBIE_STRONY'
+    )),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Przypisane tagi (+/-) wraz z komentarzem do konkretnego zadania
+CREATE TABLE zadanie_tagi (
+    id SERIAL PRIMARY KEY,
+    zadanie_id INT NOT NULL REFERENCES zadania_obserwacje(id) ON DELETE CASCADE,
+    tag_id INT NOT NULL REFERENCES slownik_tagow(id) ON DELETE RESTRICT,
+    polaryzacja CHAR(1) NOT NULL CHECK (polaryzacja IN ('+', '-')),
+    komentarz TEXT
+);
+
 
 -- 6. ZDARZENIA KADROWE (Nieobecności, zmiany stanowiska przesuwające termin oceny)
 CREATE TABLE zdarzenia_kadrowe (
@@ -154,4 +206,6 @@ CREATE INDEX idx_oceny_pracownik ON oceny_okresowe(pracownik_id);
 CREATE INDEX idx_oceny_oceniajacy ON oceny_okresowe(oceniajacy_id);
 CREATE INDEX idx_oceny_status ON oceny_okresowe(status);
 CREATE INDEX idx_wyniki_ocena ON ocena_kryteria_wyniki(ocena_id);
--- CREATE INDEX idx_notatki_ocena ON notatki_obserwacje(ocena_id);
+CREATE INDEX idx_zadania_ocena ON zadania_obserwacje(ocena_id);
+CREATE INDEX idx_zadanie_tagi_zadanie ON zadanie_tagi(zadanie_id);
+CREATE INDEX idx_zadanie_tagi_tag ON zadanie_tagi(tag_id);
