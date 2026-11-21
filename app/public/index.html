@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nginx + Node.js + PostgreSQL</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 720px;
+      margin: 48px auto;
+      padding: 0 20px;
+      color: #1f2937;
+      background: #f9fafb;
+    }
+    .card {
+      background: #ffffff;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    button {
+      background: #2563eb;
+      color: #ffffff;
+      border: none;
+      border-radius: 6px;
+      padding: 10px 16px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #1d4ed8;
+    }
+    .status {
+      margin-top: 12px;
+      font-size: 14px;
+    }
+    .ok { color: #15803d; font-weight: 600; }
+    .err { color: #b91c1c; font-weight: 600; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 16px;
+      font-size: 14px;
+    }
+    th, td {
+      text-align: left;
+      padding: 10px;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    th {
+      background: #f3f4f6;
+    }
+  </style>
+</head>
+<body>
+  <h1>Stack Connection &amp; Data Test</h1>
+
+  <div class="card">
+    <h2>1. Database Connection Test</h2>
+    <button id="testBtn">Test DB Connection</button>
+    <div id="dbStatus" class="status"></div>
+  </div>
+
+  <div class="card">
+    <h2>2. Table Preview (First 5 Rows)</h2>
+    <button id="loadBtn">Show First 5 Rows</button>
+    <div id="tableContainer"></div>
+  </div>
+
+  <script>
+    const testBtn = document.getElementById('testBtn');
+    const dbStatus = document.getElementById('dbStatus');
+    const loadBtn = document.getElementById('loadBtn');
+    const tableContainer = document.getElementById('tableContainer');
+
+    testBtn.addEventListener('click', async () => {
+      dbStatus.textContent = 'Testing connection...';
+      dbStatus.className = 'status';
+
+      try {
+        const res = await fetch('/api/test-db');
+        const data = await res.json();
+
+        if (!res.ok) throw new Error(data.error || 'Connection failed');
+
+        dbStatus.className = 'status ok';
+        dbStatus.textContent = `Connected! Server time: ${data.server_time} (${data.pg_version.split(',')[0]})`;
+      } catch (err) {
+        dbStatus.className = 'status err';
+        dbStatus.textContent = `Connection failed: ${err.message}`;
+      }
+    });
+
+    loadBtn.addEventListener('click', async () => {
+      tableContainer.textContent = 'Loading rows...';
+
+      try {
+        const res = await fetch('/api/items');
+        const data = await res.json();
+
+        if (!res.ok) throw new Error(data.error || 'Failed to load rows');
+
+        const table = document.createElement('table');
+        const thead = document.createElement('thead');
+        const headerRow = document.createElement('tr');
+
+        ['ID', 'Name', 'Category', 'Created At'].forEach((heading) => {
+          const th = document.createElement('th');
+          th.textContent = heading;
+          headerRow.appendChild(th);
+        });
+        thead.appendChild(headerRow);
+        table.appendChild(thead);
+
+        const tbody = document.createElement('tbody');
+        data.rows.forEach((row) => {
+          const tr = document.createElement('tr');
+          [row.id, row.name, row.category, new Date(row.created_at).toLocaleString()].forEach((val) => {
+            const td = document.createElement('td');
+            td.textContent = val;
+            tr.appendChild(td);
+          });
+          tbody.appendChild(tr);
+        });
+        table.appendChild(tbody);
+
+        tableContainer.innerHTML = '';
+        tableContainer.appendChild(table);
+      } catch (err) {
+        tableContainer.className = 'status err';
+        tableContainer.textContent = `Error: ${err.message}`;
+      }
+    });
+  </script>
+</body>
+</html>
