@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pl">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -141,12 +142,34 @@
       border-bottom: 1px solid var(--border-color);
     }
 
-    h1 { font-size: 22px; font-weight: 700; color: var(--primary); margin-bottom: 6px; }
-    h2 { font-size: 18px; font-weight: 700; color: var(--primary); }
-    h3 { font-size: 15px; font-weight: 600; color: var(--text-main); margin-bottom: 8px; }
-    .text-muted { color: var(--text-muted); font-size: 13px; }
+    h1 {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 6px;
+    }
 
-    .hidden { display: none !important; }
+    h2 {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    h3 {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-main);
+      margin-bottom: 8px;
+    }
+
+    .text-muted {
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+
+    .hidden {
+      display: none !important;
+    }
 
     /* Siatki pomocnicze */
     .grid-2 {
@@ -181,31 +204,49 @@
       transition: background 0.15s, border-color 0.15s;
     }
 
-    .btn:hover { background: var(--bg-subtle); }
-    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+    .btn:hover {
+      background: var(--bg-subtle);
+    }
+
+    .btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
 
     .btn-primary {
       background: var(--primary);
       color: #ffffff;
       border-color: var(--primary);
     }
-    .btn-primary:hover { background: var(--primary-hover); }
+
+    .btn-primary:hover {
+      background: var(--primary-hover);
+    }
 
     .btn-positive {
       background: var(--positive);
       color: #ffffff;
       border-color: var(--positive);
     }
-    .btn-positive:hover { opacity: 0.92; }
+
+    .btn-positive:hover {
+      opacity: 0.92;
+    }
 
     .btn-negative {
       background: var(--negative);
       color: #ffffff;
       border-color: var(--negative);
     }
-    .btn-negative:hover { opacity: 0.92; }
 
-    .btn-sm { padding: 5px 10px; font-size: 12px; }
+    .btn-negative:hover {
+      opacity: 0.92;
+    }
+
+    .btn-sm {
+      padding: 5px 10px;
+      font-size: 12px;
+    }
 
     .tabs {
       display: flex;
@@ -228,13 +269,20 @@
       cursor: pointer;
     }
 
-    .tab-btn:hover { background: var(--bg-subtle); color: var(--text-main); }
+    .tab-btn:hover {
+      background: var(--bg-subtle);
+      color: var(--text-main);
+    }
+
     .tab-btn.active {
       background: var(--primary);
       color: #ffffff;
     }
 
-    .form-group { margin-bottom: 14px; }
+    .form-group {
+      margin-bottom: 14px;
+    }
+
     .form-group label {
       display: block;
       font-weight: 600;
@@ -258,7 +306,10 @@
       background: #ffffff;
     }
 
-    textarea { resize: vertical; min-height: 75px; }
+    textarea {
+      resize: vertical;
+      min-height: 75px;
+    }
 
     /* Badges & Tagi */
     .badge {
@@ -272,11 +323,35 @@
       color: var(--text-main);
     }
 
-    .badge-primary { background: var(--primary-light); color: var(--primary); border-color: #c5d5e8; }
-    .badge-positive { background: var(--positive-bg); color: var(--positive); border-color: var(--positive-border); }
-    .badge-negative { background: var(--negative-bg); color: var(--negative); border-color: var(--negative-border); }
-    .badge-warning { background: var(--warning-bg); color: var(--warning); border-color: var(--warning-border); }
-    .badge-wellbeing { background: var(--wellbeing-bg); color: var(--wellbeing); border-color: var(--wellbeing-border); }
+    .badge-primary {
+      background: var(--primary-light);
+      color: var(--primary);
+      border-color: #c5d5e8;
+    }
+
+    .badge-positive {
+      background: var(--positive-bg);
+      color: var(--positive);
+      border-color: var(--positive-border);
+    }
+
+    .badge-negative {
+      background: var(--negative-bg);
+      color: var(--negative);
+      border-color: var(--negative-border);
+    }
+
+    .badge-warning {
+      background: var(--warning-bg);
+      color: var(--warning);
+      border-color: var(--warning-border);
+    }
+
+    .badge-wellbeing {
+      background: var(--wellbeing-bg);
+      color: var(--wellbeing);
+      border-color: var(--wellbeing-border);
+    }
 
     /* Ramki informacyjne / Alerty */
     .alert-box {
@@ -286,11 +361,36 @@
       margin-bottom: 12px;
       font-size: 13px;
     }
-    .alert-info { background: var(--primary-light); border-color: #bfd2e8; color: var(--primary); }
-    .alert-warning { background: var(--warning-bg); border-color: var(--warning-border); color: #92400e; }
-    .alert-negative { background: var(--negative-bg); border-color: var(--negative-border); color: #991b1b; }
-    .alert-positive { background: var(--positive-bg); border-color: var(--positive-border); color: #166534; }
-    .alert-wellbeing { background: var(--wellbeing-bg); border-color: var(--wellbeing-border); color: #5b21b6; }
+
+    .alert-info {
+      background: var(--primary-light);
+      border-color: #bfd2e8;
+      color: var(--primary);
+    }
+
+    .alert-warning {
+      background: var(--warning-bg);
+      border-color: var(--warning-border);
+      color: #92400e;
+    }
+
+    .alert-negative {
+      background: var(--negative-bg);
+      border-color: var(--negative-border);
+      color: #991b1b;
+    }
+
+    .alert-positive {
+      background: var(--positive-bg);
+      border-color: var(--positive-border);
+      color: #166534;
+    }
+
+    .alert-wellbeing {
+      background: var(--wellbeing-bg);
+      border-color: var(--wellbeing-border);
+      color: #5b21b6;
+    }
 
     /* ==========================================================================
        SEKCJA CSS 4: ELEMENTY SPECYFICZNE (LOGOWANIE, TIMELINE, TAGI, WIZARD)
@@ -302,6 +402,7 @@
       flex-direction: column;
       justify-content: space-between;
     }
+
     .login-card:hover {
       border-color: var(--primary);
       transform: translateY(-2px);
@@ -314,6 +415,7 @@
       gap: 12px;
       margin-top: 10px;
     }
+
     .timeline-step {
       flex: 1 1 180px;
       background: var(--bg-subtle);
@@ -322,23 +424,41 @@
       border-radius: 6px;
       padding: 12px;
     }
-    .timeline-step.urgent { border-top-color: var(--negative); }
-    .timeline-step.done { border-top-color: var(--positive); }
-    .timeline-date { font-weight: 700; color: var(--primary); font-size: 13px; margin-bottom: 4px; }
+
+    .timeline-step.urgent {
+      border-top-color: var(--negative);
+    }
+
+    .timeline-step.done {
+      border-top-color: var(--positive);
+    }
+
+    .timeline-date {
+      font-weight: 700;
+      color: var(--primary);
+      font-size: 13px;
+      margin-bottom: 4px;
+    }
 
     /* Tabele */
-    .table-wrap { overflow-x: auto; }
+    .table-wrap {
+      overflow-x: auto;
+    }
+
     table {
       width: 100%;
       border-collapse: collapse;
       font-size: 13px;
     }
-    th, td {
+
+    th,
+    td {
       text-align: left;
       padding: 10px 12px;
       border-bottom: 1px solid var(--border-color);
       vertical-align: top;
     }
+
     th {
       background: var(--bg-subtle);
       font-weight: 600;
@@ -353,12 +473,14 @@
       margin-bottom: 12px;
       background: #ffffff;
     }
+
     .task-tags-list {
       display: flex;
       flex-direction: column;
       gap: 6px;
       margin: 10px 0;
     }
+
     .tag-row {
       display: flex;
       flex-wrap: wrap;
@@ -368,9 +490,21 @@
       border-radius: 6px;
       font-size: 13px;
     }
-    .tag-row.pos { background: var(--positive-bg); border: 1px solid var(--positive-border); }
-    .tag-row.neg { background: var(--negative-bg); border: 1px solid var(--negative-border); }
-    .tag-row.wellbeing { background: var(--wellbeing-bg); border: 1px solid var(--wellbeing-border); }
+
+    .tag-row.pos {
+      background: var(--positive-bg);
+      border: 1px solid var(--positive-border);
+    }
+
+    .tag-row.neg {
+      background: var(--negative-bg);
+      border: 1px solid var(--negative-border);
+    }
+
+    .tag-row.wellbeing {
+      background: var(--wellbeing-bg);
+      border: 1px solid var(--wellbeing-border);
+    }
 
     .inline-tag-form {
       display: flex;
@@ -380,8 +514,14 @@
       padding-top: 10px;
       border-top: 1px dashed var(--border-color);
     }
-    .inline-tag-form select { flex: 1 1 170px; }
-    .inline-tag-form input[type="text"] { flex: 2 1 200px; }
+
+    .inline-tag-form select {
+      flex: 1 1 170px;
+    }
+
+    .inline-tag-form input[type="text"] {
+      flex: 2 1 200px;
+    }
 
     /* Kreator Oceny (Wizard) */
     .progress-bar-bg {
@@ -392,6 +532,7 @@
       overflow: hidden;
       margin: 10px 0 4px;
     }
+
     .progress-bar-fill {
       height: 100%;
       background: var(--primary);
@@ -402,7 +543,10 @@
       margin: 8px 0 14px 20px;
       color: var(--text-main);
     }
-    .criterion-desc-list li { margin-bottom: 4px; }
+
+    .criterion-desc-list li {
+      margin-bottom: 4px;
+    }
 
     .score-options {
       display: grid;
@@ -410,6 +554,7 @@
       gap: 8px;
       margin: 12px 0;
     }
+
     .score-radio-label {
       display: flex;
       align-items: flex-start;
@@ -420,7 +565,11 @@
       cursor: pointer;
       background: #ffffff;
     }
-    .score-radio-label:hover { background: var(--bg-subtle); }
+
+    .score-radio-label:hover {
+      background: var(--bg-subtle);
+    }
+
     .score-radio-label.selected {
       border-color: var(--primary);
       background: var(--primary-light);
@@ -475,6 +624,7 @@
       cursor: pointer;
       font-family: inherit;
     }
+
     .filter-btn.active {
       background: var(--primary);
       color: #ffffff;
@@ -502,14 +652,28 @@
       cursor: pointer;
       transition: background 0.15s, border-color 0.15s;
     }
-    .evidence-card:hover { background: #fcfdff; }
-    .evidence-card.pos { border-left-color: var(--positive); }
-    .evidence-card.neg { border-left-color: var(--negative); }
-    .evidence-card.wellbeing { border-left-color: var(--wellbeing); }
+
+    .evidence-card:hover {
+      background: #fcfdff;
+    }
+
+    .evidence-card.pos {
+      border-left-color: var(--positive);
+    }
+
+    .evidence-card.neg {
+      border-left-color: var(--negative);
+    }
+
+    .evidence-card.wellbeing {
+      border-left-color: var(--wellbeing);
+    }
+
     .evidence-card.checked {
       background: var(--primary-light);
       border-color: #9ab5d6;
     }
+
     .evidence-card input[type="checkbox"] {
       margin-top: 3px;
       width: 16px;
@@ -538,10 +702,12 @@
       font-family: inherit;
       transition: background 0.15s, color 0.15s;
     }
+
     .iprz-pill:hover {
       background: var(--primary);
       color: #ffffff;
     }
+
     .iprz-pill.used {
       background: var(--positive-bg);
       border-color: var(--positive-border);
@@ -558,6 +724,7 @@
       flex-direction: column;
       gap: 8px;
     }
+
     .toast {
       background: var(--primary);
       color: #ffffff;
@@ -567,27 +734,54 @@
       font-weight: 500;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     }
-    .toast.success { background: var(--positive); }
-    .toast.error { background: var(--negative); }
+
+    .toast.success {
+      background: var(--positive);
+    }
+
+    .toast.error {
+      background: var(--negative);
+    }
 
     /* ==========================================================================
        SEKCJA CSS 6: WIDOK WYDRUKU / EKSPORTU PDF (@media print)
        ========================================================================== */
-    #print-sheet-area { display: none; }
+    #print-sheet-area {
+      display: none;
+    }
 
     @media print {
-      body { background: #ffffff; color: #000000; }
-      .topbar, #app-main, #toast-container { display: none !important; }
+      body {
+        background: #ffffff;
+        color: #000000;
+      }
+
+      .topbar,
+      #app-main,
+      #toast-container {
+        display: none !important;
+      }
+
       #print-sheet-area {
         display: block !important;
         padding: 10px;
         font-size: 12px;
       }
-      #print-sheet-area table { border: 1px solid #000; margin: 12px 0; }
-      #print-sheet-area th, #print-sheet-area td { border: 1px solid #000; padding: 6px; }
+
+      #print-sheet-area table {
+        border: 1px solid #000;
+        margin: 12px 0;
+      }
+
+      #print-sheet-area th,
+      #print-sheet-area td {
+        border: 1px solid #000;
+        padding: 6px;
+      }
     }
   </style>
 </head>
+
 <body>
 
   <!-- ========================================================================
@@ -617,7 +811,8 @@
       <div class="card">
         <h1>Cyfrowy Asystent Ocen Okresowych w Służbie Cywilnej</h1>
         <p class="text-muted" style="margin-bottom: 18px;">
-          Wybierz jedną z ról demonstracyjnych poniżej (bez hasła), aby przetestować cały obieg oceny okresowej — od rozmowy wstępnej i dziennika tagów, po kreator oceny ze „Split Screenem” uzasadnienia i rozpatrywanie odwołań.
+          Wybierz jedną z ról demonstracyjnych poniżej (bez hasła), aby przetestować cały obieg oceny okresowej — od
+          rozmowy wstępnej i dziennika tagów, po kreator oceny ze „Split Screenem” uzasadnienia i rozpatrywanie odwołań.
         </p>
         <div id="login-cards-grid" class="grid-4">
           <!-- Renderowane z JS -->
@@ -637,12 +832,13 @@
          ====================================================================== -->
     <section id="section-manager" class="hidden">
       <div class="tabs" id="manager-main-tabs">
-        <button class="tab-btn active" onclick="setManagerTab('team')">Moi podwładni i Alerty</button>
+        <button class="tab-btn active" onclick="setManagerTab('team')">Mój zespół i Alerty</button>
         <button class="tab-btn" onclick="setManagerTab('history')">Wystawione oceny</button>
-        <button class="tab-btn" id="tab-btn-manager-self" onclick="setManagerTab('self')">Moje oceny (jako oceniany)</button>
+        <button class="tab-btn" id="tab-btn-manager-self" onclick="setManagerTab('self')">Moje oceny (jako
+          oceniany)</button>
       </div>
 
-      <!-- Podwidok 4.1: Lista podwładnych -->
+      <!-- Podwidok 4.1: Lista pracowników -->
       <div id="manager-subview-team"></div>
 
       <!-- Podwidok 4.2: Historia wystawionych ocen -->
@@ -654,7 +850,7 @@
       <!-- Podwidok 4.4: Profil konkretnego pracownika (3 zakładki: A, B, C) -->
       <div id="manager-subview-profile" class="hidden">
         <div style="margin-bottom: 12px;">
-          <button class="btn btn-sm" onclick="closeEmployeeProfile()">&larr; Powrót do listy podwładnych</button>
+          <button class="btn btn-sm" onclick="closeEmployeeProfile()">&larr; Powrót do listy pracowników</button>
         </div>
         <div id="profile-header-card" class="card"></div>
 
@@ -676,13 +872,14 @@
     <section id="section-director" class="hidden">
       <div class="tabs" id="director-main-tabs">
         <button class="tab-btn active" onclick="setDirectorTab('requests')">Odwołania i Wnioski o stopień</button>
-        <button class="tab-btn" onclick="setDirectorTab('team')">Moi podwładni (Oceny)</button>
+        <button class="tab-btn" onclick="setDirectorTab('team')">Mój zespół (Oceny)</button>
       </div>
 
       <div id="director-subview-requests"></div>
       <div id="director-subview-team" class="hidden">
         <p class="text-muted" style="margin-bottom: 12px;">
-          Jako Dyrektor Generalny oceniasz bezpośrednio podległych kierowników (sam nie podlegasz ocenie w tym systemie).
+          Jako Dyrektor Generalny oceniasz bezpośrednio podległych kierowników (sam nie podlegasz ocenie w tym
+          systemie).
         </p>
         <div id="director-team-mount"></div>
       </div>
@@ -1253,7 +1450,7 @@
           list.push(state.evaluations[i]);
         }
       }
-      list.sort(function(a, b) { return b.date.localeCompare(a.date); });
+      list.sort(function (a, b) { return b.date.localeCompare(a.date); });
       return list;
     }
 
@@ -1404,7 +1601,7 @@
       el.className = "toast " + (type || "");
       el.textContent = message;
       container.appendChild(el);
-      setTimeout(function() {
+      setTimeout(function () {
         el.remove();
       }, 3400);
     }
@@ -1689,7 +1886,7 @@
     }
 
     /* ========================================================================
-       SEKCJA JS 7: PANEL OCENIAJĄCEGO (LISTA PODWŁADNYCH, ALERTY HR PARTNERA)
+       SEKCJA JS 7: PANEL OCENIAJĄCEGO (LISTA PRACOWNIKÓW, ALERTY HR PARTNERA)
        ======================================================================== */
     function setManagerTab(tabName) {
       state.managerActiveTab = tabName;
@@ -1753,7 +1950,7 @@
 
       let cardsHtml = "";
       if (subs.length === 0) {
-        cardsHtml = '<p class="text-muted">Brak przypisanych podwładnych.</p>';
+        cardsHtml = '<p class="text-muted">Brak przypisanych pracowników.</p>';
       } else {
         for (let i = 0; i < subs.length; i++) {
           let emp = subs[i];
@@ -3019,9 +3216,10 @@
     }
 
     // Start aplikacji
-    window.addEventListener("DOMContentLoaded", function() {
+    window.addEventListener("DOMContentLoaded", function () {
       renderApp();
     });
   </script>
 </body>
+
 </html>

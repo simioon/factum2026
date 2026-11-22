@@ -25,15 +25,15 @@ export function renderSubordinatesList(managerId, containerId, { onOpenProfile }
 
     const cardsHtml =
         subs.length === 0
-            ? '<p class="text-muted">Brak przypisanych podwładnych.</p>'
+            ? '<p class="text-muted">Brak przypisanych pracowników.</p>'
             : subs
-                  .map((emp) => {
-                      const alertsHtml = renderAlertsHtml(emp.alerts || []);
-                      const statusBadge = emp.activeStatus
-                          ? `<span class="badge">${escapeHtml((state.dictionaries && state.dictionaries.statusLabels[emp.activeStatus]) || emp.activeStatus)}</span>`
-                          : '';
+                .map((emp) => {
+                    const alertsHtml = renderAlertsHtml(emp.alerts || []);
+                    const statusBadge = emp.activeStatus
+                        ? `<span class="badge">${escapeHtml((state.dictionaries && state.dictionaries.statusLabels[emp.activeStatus]) || emp.activeStatus)}</span>`
+                        : '';
 
-                      return `
+                    return `
                         <div class="card">
                             <div style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:10px;">
                                 <div>
@@ -55,8 +55,8 @@ export function renderSubordinatesList(managerId, containerId, { onOpenProfile }
                             ${alertsHtml}
                         </div>
                     `;
-                  })
-                  .join('');
+                })
+                .join('');
 
     container.innerHTML = appealAlerts + cardsHtml;
 
@@ -81,7 +81,7 @@ export function renderManagerHistory() {
                 const appealText =
                     ev.appeals && ev.appeals.length > 0
                         ? (state.dictionaries && state.dictionaries.appealDecisionLabels[ev.appeals[0].decyzja_dyrektora]) ||
-                          ev.appeals[0].decyzja_dyrektora
+                        ev.appeals[0].decyzja_dyrektora
                         : '<span class="text-muted">Brak</span>';
                 return `
                     <tr>
