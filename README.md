@@ -171,28 +171,6 @@ Wszystkie parametry czasowe i liczbowe można dostosować w **Panelu Admina → 
 
 ---
 
-## Scenariusz prezentacji / Demo krok po kroku
-
-System startuje z 5 gotowymi rolami demonstracyjnymi (przełączanymi w górnym pasku):
-
-| Osoba | Rola | Arkusz | Scenariusz w danych startowych |
-| --- | --- | :---: | --- |
-| **Jan Kowalski** | `OCENIAJACY` | B | Naczelnik Wydziału — przełożony Anny i Tomasza; ma złożony fakultatywny wniosek o stopień V |
-| **Tomasz Mazur** | `OCENIANY` | C | Po ocenie `NEGATYWNA` (3.4 pkt) — skrócony termin 7 dni, niepodpisana Część I, aktywny alert przeciążenia HR |
-| **Anna Nowak** | `OCENIANY` | C | Urzędnik mianowany (st. II), poprzednia ocena `POZYTYWNA` (7.4 pkt) — kwalifikuje się do **automatycznego awansu** na st. III |
-| **Marek Wiśniewski** | `DYREKTOR` | — | Dyrektor Generalny — rozpatruje odwołania i wnioski o stopień, ocenia Jana Kowalskiego |
-| **Piotr Zieliński** | `ADMIN` | — | Administrator — zarządza użytkownikami, tagami, kryteriami i parametrami prawnymi |
-
-### Sugerowana 5-minutowa ścieżka pokazu
-1. **Jan Kowalski → Tomasz Mazur (Zakładka A)**: pokaż **ściągawkę z poprzedniej oceny negatywnej**, ustaw datę rozmowy wstępnej i kryteria dodatkowe, kliknij **Zapisz i dodaj e-podpis (Część I)** → formularz natychmiast się blokuje.
-2. **Tomasz Mazur (Zakładka B)**: dodaj obserwację z **wieloma tagami naraz** (mieszane `+` / `−` + wspólna notatka) i pokaż alert **Wirtualnego HR Partnera** (sygnały dobrostanu nie obniżają oceny).
-3. **Jan Kowalski → Anna Nowak (Zakładka C — Kreator)**: przejdź przez oceny cząstkowe (`7 pkt`), użyj **Split-Screen klocków dowodowych** oraz **Smart IPRZ**, wystaw ocenę i kliknij **Drukuj / PDF** (oficjalny 4-stronicowy arkusz).
-4. **Przełącz na Annę Nowak**: złóż e-podpis zapoznania się z oceną → obserwuj **automatyczny awans na stopień III (OBLIGATORYJNY)** oraz możliwość złożenia sprzeciwu (7 dni).
-5. **Przełącz na Marka Wiśniewskiego (`DYREKTOR`)**: zatwierdź wniosek o stopień V dla Jana lub rozpatrz sprzeciw pracownika.
-6. **Przełącz na Piotra Zielińskiego (`ADMIN`)**: dodaj nowe kryterium, zmapuj nowy tag, **wycofaj istniejący tag** (pokaż zachowanie historii w dzienniku) oraz zmień parametr w **Parametrach prawnych (Przepisy)**.
-
----
-
 ## Przegląd REST API i modelu bazy danych
 
 ### Model bazy danych ([schema.sql](app/db/schema.sql))
