@@ -26,6 +26,7 @@ test('Full end-to-end evaluation, HR events, visibility, appeals, and rank workf
     let marek;
     let admin;
     let dictionaries;
+    let katarzynaId;
 
     await t.test('1. Health, dictionaries, and seeded users (no haslo_hash leak)', async () => {
         const health = await apiReq('/api/health');
@@ -84,6 +85,7 @@ test('Full end-to-end evaluation, HR events, visibility, appeals, and rank workf
         assert.equal(created.status, 201);
         assert.ok(created.data.activeEvaluation);
         const newUserId = created.data.user.id;
+        katarzynaId = newUserId;
 
         const reassigned = await apiReq(`/api/users/${newUserId}/evaluator`, {
             method: 'PATCH',
@@ -121,6 +123,20 @@ test('Full end-to-end evaluation, HR events, visibility, appeals, and rank workf
         assert.equal(setupOk.status, 200);
         assert.equal(setupOk.data.evaluation.status, 'OCZEKIWANIE_NA_PODPIS_KRYTERIOW');
         assert.equal(setupOk.data.evaluation.criteria.length, 7); // 5 mandatory + 2 additional
+
+        // Part I is now locked: any further setup save or re-sign is rejected with 409
+        const lockedResave = await apiReq(`/api/evaluations/${evalId}/setup`, {
+            method: 'PUT',
+            userId: jan.id,
+            body: { additionalCriteriaIds: [7], signByEvaluator: false },
+        });
+        assert.equal(lockedResave.status, 409);
+        const lockedResign = await apiReq(`/api/evaluations/${evalId}/setup`, {
+            method: 'PUT',
+            userId: jan.id,
+            body: { additionalCriteriaIds: [7, 2], signByEvaluator: true },
+        });
+        assert.equal(lockedResign.status, 409);
 
         const empSign = await apiReq(`/api/evaluations/${evalId}/sign-criteria`, {
             method: 'POST',
@@ -472,7 +488,7 @@ test('Full end-to-end evaluation, HR events, visibility, appeals, and rank workf
         assert.ok(dictAfterCreate.data.criteria.some((c) => c.id === critId));
         assert.ok(dictAfterCreate.data.sheetCriteria.B.additionalIds.includes(critId));
 
-        const janWs = await apiReq(`/api/users/${jan.id}/workspace`, { userId: marek.id });
+        const janWs = await apiReq(`/api/users/${katarzynaId}/workspace`, { userId: marek.id });
         const janEvalId = janWs.data.activeEvaluation.id;
         const setupWithNewCrit = await apiReq(`/api/evaluations/${janEvalId}/setup`, {
             method: 'PUT',
@@ -515,7 +531,7 @@ test('Full end-to-end evaluation, HR events, visibility, appeals, and rank workf
         assert.equal(dictAfterArchive.data.criteria.some((c) => c.id === critId), false);
         assert.equal(dictAfterArchive.data.sheetCriteria.B.additionalIds.includes(critId), false);
 
-        const janWsAfterArchive = await apiReq(`/api/users/${jan.id}/workspace`, { userId: marek.id });
+        const janWsAfterArchive = await apiReq(`/api/users/${katarzynaId}/workspace`, { userId: marek.id });
         const preservedCrit = janWsAfterArchive.data.activeEvaluation.criteria.find((c) => c.kryterium_id === critId);
         assert.ok(preservedCrit);
         assert.equal(preservedCrit.nazwa, 'Cyberbezpieczeństwo i RODO');
@@ -580,7 +596,7 @@ test('Full end-to-end evaluation, HR events, visibility, appeals, and rank workf
         assert.equal(dupTag.status, 409);
 
         // Assign newly created tag to a task in Jan's evaluation -> feeds both criteria in workspace
-        const janWs = await apiReq(`/api/users/${jan.id}/workspace`, { userId: marek.id });
+        const janWs = await apiReq(`/api/users/${katarzynaId}/workspace`, { userId: marek.id });
         const janEvalId = janWs.data.activeEvaluation.id;
         const taggedTask = await apiReq(`/api/evaluations/${janEvalId}/tasks`, {
             method: 'POST',
@@ -594,7 +610,7 @@ test('Full end-to-end evaluation, HR events, visibility, appeals, and rank workf
         assert.equal(taggedTask.status, 201);
         const taskId = taggedTask.data.task.id;
 
-        const wsAfterTag = await apiReq(`/api/users/${jan.id}/workspace`, { userId: marek.id });
+        const wsAfterTag = await apiReq(`/api/users/${katarzynaId}/workspace`, { userId: marek.id });
         assert.equal(wsAfterTag.data.tagSummariesByCriterion[cyberCrit.id].posCount, 1);
         assert.ok(wsAfterTag.data.tagSummariesByCriterion[1].entries.some((e) => e.tagId === 'Higiena Cyfrowa'));
 
@@ -613,7 +629,7 @@ test('Full end-to-end evaluation, HR events, visibility, appeals, and rank workf
         assert.equal(editedTag.data.tag.nazwa, 'Bezpieczeństwo Danych');
         assert.deepEqual(editedTag.data.tag.criteriaIds, [4, cyberCrit.id]);
 
-        const wsAfterEdit = await apiReq(`/api/users/${jan.id}/workspace`, { userId: marek.id });
+        const wsAfterEdit = await apiReq(`/api/users/${katarzynaId}/workspace`, { userId: marek.id });
         const updatedTask = wsAfterEdit.data.activeEvaluation.tasks.find((x) => x.id === taskId);
         assert.equal(updatedTask.tags[0].tag_nazwa, 'Bezpieczeństwo Danych');
         assert.ok(wsAfterEdit.data.tagSummariesByCriterion[4].entries.some((e) => e.tagId === 'Bezpieczeństwo Danych'));
@@ -641,7 +657,7 @@ test('Full end-to-end evaluation, HR events, visibility, appeals, and rank workf
         assert.equal(assignArchived.status, 400);
 
         // Historical task tag AND Wizard summary remain 100% preserved
-        const wsAfterDelete = await apiReq(`/api/users/${jan.id}/workspace`, { userId: marek.id });
+        const wsAfterDelete = await apiReq(`/api/users/${katarzynaId}/workspace`, { userId: marek.id });
         const preservedTask = wsAfterDelete.data.activeEvaluation.tasks.find((x) => x.id === taskId);
         assert.equal(preservedTask.tags.length, 1);
         assert.equal(preservedTask.tags[0].tag_nazwa, 'Bezpieczeństwo Danych');

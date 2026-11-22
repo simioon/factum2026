@@ -30,6 +30,12 @@ export function renderSetupTab(workspace, onRefresh) {
     const activeCritIds = new Set(activeEvaluation.criteria.map((c) => c.kryterium_id));
     const mandatoryIds = sheetConfig.mandatoryIds;
 
+    const mgrSigned = activeEvaluation.podpis_kryteria_oceniajacy_at;
+    const empSigned = activeEvaluation.podpis_kryteria_oceniany_at;
+    const partISigned = Boolean(mgrSigned);
+    const readOnlySetup = activeEvaluation.status === 'SPORZADZONA_DO_PODPISU';
+    const lockSetup = readOnlySetup || partISigned;
+
     const mandatoryHtml = mandatoryIds
         .map((id) => {
             const c = state.dictionaries.criteria.find((x) => x.id === id);
@@ -42,16 +48,14 @@ export function renderSetupTab(workspace, onRefresh) {
         .map((c) => {
             const checked = activeCritIds.has(c.id) ? 'checked' : '';
             return `
-                <label style="display:flex; align-items:center; gap:8px; padding:6px 8px; border:1px solid var(--border-color); border-radius:6px; cursor:pointer; background:#fff;">
-                    <input type="checkbox" name="additional-crit" value="${c.id}" ${checked}>
+                <label class="${lockSetup ? 'is-locked' : ''}" style="display:flex; align-items:center; gap:8px; padding:6px 8px; border:1px solid var(--border-color); border-radius:6px; cursor:pointer; background:#fff;">
+                    <input type="checkbox" name="additional-crit" value="${c.id}" ${checked} ${lockSetup ? 'disabled' : ''}>
                     <span>${escapeHtml(c.nazwa)}</span>
                 </label>
             `;
         })
         .join('');
 
-    const mgrSigned = activeEvaluation.podpis_kryteria_oceniajacy_at;
-    const empSigned = activeEvaluation.podpis_kryteria_oceniany_at;
     let signStatusHtml = '';
     if (mgrSigned && empSigned) {
         signStatusHtml = `<div class="alert-box alert-positive">
@@ -89,7 +93,6 @@ export function renderSetupTab(workspace, onRefresh) {
                   .join('')
             : '<p class="text-muted">Brak zarejestrowanych zdarzeń kadrowych w tym cyklu.</p>';
 
-    const readOnlySetup = activeEvaluation.status === 'SPORZADZONA_DO_PODPISU';
     const prevSummaryHtml = renderPreviousEvaluationCheatSheetHtml(pastEvaluations);
 
     container.innerHTML = `
@@ -107,11 +110,11 @@ export function renderSetupTab(workspace, onRefresh) {
             <div class="grid-2">
                 <div class="form-group">
                     <label for="setup-interview-date">Data rozmowy wstępnej</label>
-                    <input type="date" id="setup-interview-date" value="${escapeHtml(activeEvaluation.data_rozmowy_wstepnej || '')}" ${readOnlySetup ? 'disabled' : ''}>
+                    <input type="date" id="setup-interview-date" value="${escapeHtml(activeEvaluation.data_rozmowy_wstepnej || '')}" ${lockSetup ? 'disabled' : ''}>
                 </div>
                 <div class="form-group">
                     <label for="setup-interview-notes">Notatki z rozmowy wstępnej (cele, oczekiwania)</label>
-                    <textarea id="setup-interview-notes" placeholder="Zapisz ustalone cele i oczekiwania..." ${readOnlySetup ? 'disabled' : ''}>${escapeHtml(activeEvaluation.oczekiwania_i_cele || '')}</textarea>
+                    <textarea id="setup-interview-notes" placeholder="Zapisz ustalone cele i oczekiwania..." ${lockSetup ? 'disabled' : ''}>${escapeHtml(activeEvaluation.oczekiwania_i_cele || '')}</textarea>
                 </div>
             </div>
 
@@ -128,7 +131,21 @@ export function renderSetupTab(workspace, onRefresh) {
             ${
                 readOnlySetup
                     ? '<p class="text-muted">Ocena została już sporządzona i oczekuje na podpis pracownika.</p>'
-                    : `
+                    : partISigned
+                      ? `
+                <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:center;">
+                    <button type="button" class="btn btn-signed" id="btn-setup-signed" disabled aria-disabled="true"
+                            title="Część I została podpisana i jest zablokowana">
+                        ✓ Podpisano elektronicznie (${escapeHtml(formatDateTime(mgrSigned))})
+                    </button>
+                    ${
+                        empSigned
+                            ? ''
+                            : '<span class="text-muted" style="font-size:12px;">Oczekiwanie na e-podpis ocenianego — zmiany w Części I są zablokowane.</span>'
+                    }
+                </div>
+            `
+                      : `
                 <div style="display:flex; flex-wrap:wrap; gap:10px;">
                     <button type="button" class="btn btn-primary" id="btn-setup-save-draft">Zapisz roboczo</button>
                     <button type="button" class="btn btn-positive" id="btn-setup-save-sign">Zapisz i dodaj e-podpis (Część I)</button>
@@ -187,6 +204,10 @@ export function renderSetupTab(workspace, onRefresh) {
     });
 
     async function submitSetup(signByEvaluator) {
+        if (partISigned) {
+            showToast('Część I jest już podpisana i zablokowana.', 'error');
+            return;
+        }
         const interviewDate = container.querySelector('#setup-interview-date').value || null;
         const notes = container.querySelector('#setup-interview-notes').value.trim();
         const checked = Array.from(container.querySelectorAll('input[name="additional-crit"]:checked')).map((el) =>

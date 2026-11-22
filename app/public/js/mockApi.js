@@ -1985,6 +1985,12 @@ export const mockApi = {
         if (!EDITABLE_SETUP_STATUSES.has(ev.status)) {
             throw createError(400, `Nie można edytować kryteriów w statusie ${ev.status}.`);
         }
+        if (ev.podpis_kryteria_oceniajacy_at) {
+            throw createError(
+                409,
+                'Część I została już podpisana elektronicznie — kryteria i ustalenia rozmowy wstępnej nie mogą być zmieniane.'
+            );
+        }
 
         const {
             data_rozmowy_wstepnej = null,

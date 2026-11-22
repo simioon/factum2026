@@ -12,6 +12,7 @@ test('Offline mockApi reproduces full evaluation, HR event, visibility, appeal, 
     let anna;
     let tomasz;
     let dictionaries;
+    let katarzynaId;
 
     await t.test('1. Dictionaries and seeded users', async () => {
         dictionaries = await mockApi.getDictionaries();
@@ -43,6 +44,7 @@ test('Offline mockApi reproduces full evaluation, HR event, visibility, appeal, 
             admin.id
         );
         assert.ok(created.activeEvaluation);
+        katarzynaId = created.user.id;
 
         const reassigned = await mockApi.changeEvaluator(created.user.id, marek.id, admin.id);
         assert.equal(reassigned.user.przelozony_id, marek.id);
@@ -69,6 +71,16 @@ test('Offline mockApi reproduces full evaluation, HR event, visibility, appeal, 
             jan.id
         );
         assert.equal(signedMgr.evaluation.status, 'OCZEKIWANIE_NA_PODPIS_KRYTERIOW');
+
+        // Part I is now locked: further setup saves / re-sign attempts are rejected with 409
+        await assert.rejects(
+            () => mockApi.saveSetup(evalId, { additionalCriteriaIds: [7], signByEvaluator: false }, jan.id),
+            (err) => err.status === 409
+        );
+        await assert.rejects(
+            () => mockApi.saveSetup(evalId, { additionalCriteriaIds: [7, 2], signByEvaluator: true }, jan.id),
+            (err) => err.status === 409
+        );
 
         const signedEmp = await mockApi.signCriteria(evalId, tomasz.id);
         assert.equal(signedEmp.evaluation.status, 'W_TRAKCIE_OKRESU');
@@ -291,7 +303,7 @@ test('Offline mockApi reproduces full evaluation, HR event, visibility, appeal, 
         const dict1 = await mockApi.getDictionaries();
         assert.ok(dict1.sheetCriteria.B.additionalIds.includes(critId));
 
-        const janWs = await mockApi.getWorkspace(jan.id, marek.id);
+        const janWs = await mockApi.getWorkspace(katarzynaId, marek.id);
         await mockApi.saveSetup(
             janWs.activeEvaluation.id,
             {
@@ -322,7 +334,7 @@ test('Offline mockApi reproduces full evaluation, HR event, visibility, appeal, 
         const dictAfter = await mockApi.getDictionaries();
         assert.equal(dictAfter.criteria.some((c) => c.id === critId), false);
 
-        const janWsAfter = await mockApi.getWorkspace(jan.id, marek.id);
+        const janWsAfter = await mockApi.getWorkspace(katarzynaId, marek.id);
         const preserved = janWsAfter.activeEvaluation.criteria.find((c) => c.kryterium_id === critId);
         assert.ok(preserved);
         assert.equal(preserved.kryterium_czy_aktywne, false);
@@ -359,7 +371,7 @@ test('Offline mockApi reproduces full evaluation, HR event, visibility, appeal, 
         const tagId = created.tag.id;
         assert.deepEqual(created.tag.criteriaIds, [1, cyberCrit.id]);
 
-        const janWs = await mockApi.getWorkspace(jan.id, marek.id);
+        const janWs = await mockApi.getWorkspace(katarzynaId, marek.id);
         const taskRes = await mockApi.createTask(
             janWs.activeEvaluation.id,
             {
@@ -383,7 +395,7 @@ test('Offline mockApi reproduces full evaluation, HR event, visibility, appeal, 
         );
         assert.equal(edited.tag.nazwa, 'Bezpieczeństwo Danych');
 
-        const wsEdit = await mockApi.getWorkspace(jan.id, marek.id);
+        const wsEdit = await mockApi.getWorkspace(katarzynaId, marek.id);
         assert.equal(wsEdit.activeEvaluation.tasks.find((x) => x.id === taskId).tags[0].tag_nazwa, 'Bezpieczeństwo Danych');
         assert.ok(wsEdit.tagSummariesByCriterion[4].entries.some((e) => e.tagId === 'Bezpieczeństwo Danych'));
 
@@ -399,7 +411,7 @@ test('Offline mockApi reproduces full evaluation, HR event, visibility, appeal, 
             (err) => err.status === 400
         );
 
-        const wsDel = await mockApi.getWorkspace(jan.id, marek.id);
+        const wsDel = await mockApi.getWorkspace(katarzynaId, marek.id);
         const preservedTask = wsDel.activeEvaluation.tasks.find((x) => x.id === taskId);
         assert.equal(preservedTask.tags.length, 1);
         assert.equal(preservedTask.tags[0].tag_czy_aktywny, false);

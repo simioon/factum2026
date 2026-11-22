@@ -176,6 +176,12 @@ router.put(
             if (!EDITABLE_SETUP_STATUSES.includes(evalRow.status)) {
                 throw new HttpError(400, `Nie można edytować kryteriów w statusie ${evalRow.status}.`);
             }
+            if (evalRow.podpis_kryteria_oceniajacy_at) {
+                throw new HttpError(
+                    409,
+                    'Część I została już podpisana elektronicznie — kryteria i ustalenia rozmowy wstępnej nie mogą być zmieniane.'
+                );
+            }
 
             const sheetCritRes = await client.query(
                 `SELECT ak.kryterium_id, ak.typ_kryterium
