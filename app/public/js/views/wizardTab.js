@@ -12,6 +12,7 @@ import {
     toRomanRank,
 } from '../utils.js';
 import { printEvaluationSheet } from './printSheet.js';
+import { addIntegrationLog, exportEzdPackage } from '../integrations.js';
 
 export function renderWizardTab(workspace, onFinalized) {
     const container = document.getElementById('profile-tab-wizard');
@@ -51,10 +52,17 @@ export function renderWizardTab(workspace, onFinalized) {
                 <div style="margin-top:14px;">
                     <button type="button" class="btn" id="btn-wizard-print-waiting">Drukuj / PDF</button>
                 </div>
+                <div style="margin-top:14px; display:flex; gap:8px; flex-wrap:wrap;">
+                    <button type="button" class="btn" id="btn-wizard-print-waiting">Drukuj / PDF</button>
+                    <button type="button" class="btn" id="btn-wizard-ezd-waiting">Eksport do EZD (XML)</button>
+                </div>
             </div>
         `;
         container.querySelector('#btn-wizard-print-waiting').addEventListener('click', () => {
             printEvaluationSheet({ employee: user, evaluator, evaluation: activeEvaluation });
+        });
+        container.querySelector('#btn-wizard-ezd-waiting').addEventListener('click', () => {
+            exportEzdPackage({ employee: user, evaluator, evaluation: activeEvaluation });
         });
         return;
     }
@@ -449,33 +457,33 @@ export function renderWizardTab(workspace, onFinalized) {
         });
     });
 
-container.querySelectorAll('[data-iprz-pill]').forEach((btn) => {
-    btn.addEventListener('click', () => {
-        const pillText = iprzPills[Number(btn.dataset.iprzPill)];
-        if (!pillText) return;
+    container.querySelectorAll('[data-iprz-pill]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const pillText = iprzPills[Number(btn.dataset.iprzPill)];
+            if (!pillText) return;
 
-        let currentText = iprzTa.value;
-        const isAlreadyUsed = state.wizard.usedIprzPills.includes(pillText);
-        const bulletLine = `• ${pillText}`;
+            let currentText = iprzTa.value;
+            const isAlreadyUsed = state.wizard.usedIprzPills.includes(pillText);
+            const bulletLine = `• ${pillText}`;
 
-        if (isAlreadyUsed) {
-            state.wizard.usedIprzPills = state.wizard.usedIprzPills.filter((p) => p !== pillText);
-            const keptLines = currentText
-                .split('\n')
-                .filter((line) => line.trim() !== bulletLine && line.trim() !== pillText);
-            currentText = keptLines.join('\n').replace(/\n{3,}/g, '\n\n').trimEnd();
-        } else {
-            if (!currentText.includes(pillText)) {
-                const sep = currentText.trim().length > 0 ? '\n' : '';
-                currentText = `${currentText.trimEnd()}${sep}${bulletLine}`;
+            if (isAlreadyUsed) {
+                state.wizard.usedIprzPills = state.wizard.usedIprzPills.filter((p) => p !== pillText);
+                const keptLines = currentText
+                    .split('\n')
+                    .filter((line) => line.trim() !== bulletLine && line.trim() !== pillText);
+                currentText = keptLines.join('\n').replace(/\n{3,}/g, '\n\n').trimEnd();
+            } else {
+                if (!currentText.includes(pillText)) {
+                    const sep = currentText.trim().length > 0 ? '\n' : '';
+                    currentText = `${currentText.trimEnd()}${sep}${bulletLine}`;
+                }
+                state.wizard.usedIprzPills.push(pillText);
             }
-            state.wizard.usedIprzPills.push(pillText);
-        }
 
-        state.wizard.iprz = currentText;
-        renderWizardTab(workspace, onFinalized);
+            state.wizard.iprz = currentText;
+            renderWizardTab(workspace, onFinalized);
+        });
     });
-});
 
     container.querySelector('#btn-wiz-back').addEventListener('click', () => {
         state.wizard.stepIndex = Math.max(0, state.wizard.stepIndex - 1);
@@ -514,6 +522,20 @@ container.querySelectorAll('[data-iprz-pill]').forEach((btn) => {
                 wnioski_iprz: iprz,
                 requestRankPromotion: Boolean(state.wizard.requestRankPromotion),
             });
+            addIntegrationLog({
+                channel: 'EMAIL',
+                recipient: user.email || user.imie_nazwisko,
+                subject: `Sporządzona ocena okresowa (${calc.result}) oczekuje na Twój e-podpis`,
+                details: `Arkusz ${activeEvaluation.typ_arkusza} | Średnia: ${calc.average} pkt | Wystawiający: ${evaluator ? evaluator.imie_nazwisko : 'Przełożony'}.`,
+            });
+            if (state.wizard.requestRankPromotion) {
+                addIntegrationLog({
+                    channel: 'EZD',
+                    recipient: 'Dyrektor Generalny — obieg EZD',
+                    subject: `Wniosek o przyznanie wyższego stopnia służbowego (${user.imie_nazwisko})`,
+                    details: `Część III arkusza oceny — skierowano do rozpatrzenia przez Dyrektora Generalnego.`,
+                });
+            }
             if (res.autoRankPromotionPending) {
                 showToast('Wystawiono ocenę! Po e-podpisie pracownika stopień służbowy wzrośnie automatycznie.', 'success');
             } else if (state.wizard.requestRankPromotion) {

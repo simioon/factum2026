@@ -2,6 +2,7 @@ import { api } from '../api.js';
 import { state } from '../state.js';
 import { escapeHtml, formatDate, formatDateTime, showToast, toRomanRank } from '../utils.js';
 import { printEvaluationSheet } from './printSheet.js';
+import { addIntegrationLog, exportEzdPackage } from '../integrations.js';
 
 export function renderEmployeePanel(workspace, targetElementId, onRefresh) {
     const container = document.getElementById(targetElementId);
@@ -197,6 +198,7 @@ export function renderEmployeePanel(workspace, targetElementId, onRefresh) {
                                 ${statusBadge}
                                 <span class="badge badge-primary">Średnia: ${ev.srednia_punktow} (${escapeHtml(ev.poziom_oceny_label || '')})</span>
                                 <button type="button" class="btn btn-xs" data-print-past-eval="${ev.id}">Drukuj / PDF</button>
+                                <button type="button" class="btn btn-xs" data-ezd-past-eval="${ev.id}">Przekaż do EZD (XML)</button>
                             </div>
                         </div>
                         <p style="white-space:pre-line;"><strong>Uzasadnienie:</strong> ${escapeHtml(ev.uzasadnienie_oceny || 'Brak')}</p>
@@ -300,6 +302,12 @@ export function renderEmployeePanel(workspace, targetElementId, onRefresh) {
         btnSignCrit.addEventListener('click', async () => {
             try {
                 await api.signCriteria(Number(btnSignCrit.dataset.evalId));
+                addIntegrationLog({
+                    channel: 'EMAIL',
+                    recipient: evaluator ? evaluator.email || evaluator.imie_nazwisko : 'Przełożony',
+                    subject: `Potwierdzono kryteria oceny (Część I) — ${user.imie_nazwisko}`,
+                    details: `Oceniany złożył e-podpis zapoznania się z kryteriami. Rozpoczęto etap bieżącej realizacji zadań.`,
+                });
                 showToast('Złożono e-podpis potwierdzający zapoznanie się z kryteriami (Część I).', 'success');
                 await onRefresh();
             } catch (err) {
@@ -313,6 +321,18 @@ export function renderEmployeePanel(workspace, targetElementId, onRefresh) {
         btnAckEval.addEventListener('click', async () => {
             try {
                 const res = await api.acknowledgeEvaluation(Number(btnAckEval.dataset.evalId));
+                addIntegrationLog({
+                    channel: 'EZD',
+                    recipient: 'Akta osobowe (część B) — EZD RP',
+                    subject: `Zakończona ocena okresowa (Arkusz ${activeEvaluation.typ_arkusza}) — ${user.imie_nazwisko}`,
+                    details: `Obustronny e-podpis złożony. Dokument automatycznie zarejestrowany w obiegu EZD (JRWA 2120).`,
+                });
+                addIntegrationLog({
+                    channel: 'EMAIL',
+                    recipient: evaluator ? evaluator.email || evaluator.imie_nazwisko : 'Przełożony',
+                    subject: `Oceniany potwierdził zapoznanie się z oceną — ${user.imie_nazwisko}`,
+                    details: `Złożono e-podpis końcowy. Automatycznie otwarto kolejny cykl oceny.`,
+                });
                 if (res.autoRankPromoted) {
                     showToast(`Potwierdzono ocenę! Stopień służbowy automatycznie wzrósł na ${toRomanRank(res.newRank)}.`, 'success');
                 } else {
@@ -341,6 +361,15 @@ export function renderEmployeePanel(workspace, targetElementId, onRefresh) {
             printEvaluationSheet({ employee: user, evaluator: evUser, evaluation: ev });
         });
     });
+    container.querySelectorAll('[data-ezd-past-eval]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const evalId = Number(btn.dataset.ezdPastEval);
+            const ev = pastEvaluations.find((e) => e.id === evalId);
+            if (!ev) return;
+            const evUser = state.users.find((u) => u.id === ev.oceniajacy_id);
+            exportEzdPackage({ employee: user, evaluator: evUser, evaluation: ev });
+        });
+    });
 
     container.querySelectorAll('[data-toggle-appeal]').forEach((btn) => {
         btn.addEventListener('click', () => {
@@ -360,6 +389,18 @@ export function renderEmployeePanel(workspace, targetElementId, onRefresh) {
             }
             try {
                 const res = await api.createAppeal(evalId, { uzasadnienie_pracownika: reason });
+                addIntegrationLog({
+                    channel: 'EZD',
+                    recipient: 'Dyrektor Generalny — Rejestr Sprzeciwów EZD',
+                    subject: `Sprzeciw od oceny okresowej — ${user.imie_nazwisko}`,
+                    details: `Termin ustawowy rozpatrzenia (14 dni): ${res.appeal.termin_rozpatrzenia}.`,
+                });
+                addIntegrationLog({
+                    channel: 'EMAIL',
+                    recipient: 'dyrektor.generalny@urzad.gov.pl',
+                    subject: `Nowy sprzeciw od oceny okresowej wymaga decyzji (14 dni) — ${user.imie_nazwisko}`,
+                    details: `Złożono odwołanie w systemie ocen okresowych.`,
+                });
                 const warn = res.appeal.po_terminie_ustawowym
                     ? ' (Uwaga: złożono po upływie 7 dni od zapoznania — tryb demo)'
                     : '';

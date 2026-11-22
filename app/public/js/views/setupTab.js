@@ -7,12 +7,13 @@ import {
     renderPreviousEvaluationCheatSheetHtml,
     showToast,
 } from '../utils.js';
+import { addIntegrationLog, downloadCalendarInvite, openMailto } from '../integrations.js';
 
 export function renderSetupTab(workspace, onRefresh) {
     const container = document.getElementById('profile-tab-setup');
     if (!container || !workspace) return;
 
-    const { activeEvaluation, pastEvaluations } = workspace;
+    const { user, evaluator, activeEvaluation, pastEvaluations } = workspace;
     if (!activeEvaluation) {
         container.innerHTML = '<div class="card"><p class="text-muted">Brak aktywnego cyklu oceny dla tego pracownika.</p></div>';
         return;
@@ -75,8 +76,8 @@ export function renderSetupTab(workspace, onRefresh) {
     const hrEventsHtml =
         activeEvaluation.hrEvents && activeEvaluation.hrEvents.length > 0
             ? activeEvaluation.hrEvents
-                  .map(
-                      (ev) => `
+                .map(
+                    (ev) => `
                 <div class="hr-event-row">
                     <div>
                         <strong>${escapeHtml(eventLabels[ev.typ_zdarzenia] || ev.typ_zdarzenia)}</strong>
@@ -89,8 +90,8 @@ export function renderSetupTab(workspace, onRefresh) {
                     <button type="button" class="btn btn-xs btn-negative" data-delete-hr-event="${ev.id}">Usuń i cofnij przesunięcie</button>
                 </div>
             `
-                  )
-                  .join('')
+                )
+                .join('')
             : '<p class="text-muted">Brak zarejestrowanych zdarzeń kadrowych w tym cyklu.</p>';
 
     const prevSummaryHtml = renderPreviousEvaluationCheatSheetHtml(pastEvaluations);
@@ -128,30 +129,33 @@ export function renderSetupTab(workspace, onRefresh) {
                 <div class="grid-2" style="margin-top:8px;">${additionalCheckboxesHtml}</div>
             </div>
 
-            ${
-                readOnlySetup
-                    ? '<p class="text-muted">Ocena została już sporządzona i oczekuje na podpis pracownika.</p>'
-                    : partISigned
-                      ? `
+            ${readOnlySetup
+            ? '<p class="text-muted">Ocena została już sporządzona i oczekuje na podpis pracownika.</p>'
+            : partISigned
+                ? `
                 <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:center;">
                     <button type="button" class="btn btn-signed" id="btn-setup-signed" disabled aria-disabled="true"
                             title="Część I została podpisana i jest zablokowana">
                         ✓ Podpisano elektronicznie (${escapeHtml(formatDateTime(mgrSigned))})
                     </button>
-                    ${
-                        empSigned
-                            ? ''
-                            : '<span class="text-muted" style="font-size:12px;">Oczekiwanie na e-podpis ocenianego — zmiany w Części I są zablokowane.</span>'
-                    }
+                    ${empSigned
+                    ? ''
+                    : '<span class="text-muted" style="font-size:12px;">Oczekiwanie na e-podpis ocenianego — zmiany w Części I są zablokowane.</span>'
+                }
                 </div>
             `
-                      : `
+                : `
                 <div style="display:flex; flex-wrap:wrap; gap:10px;">
                     <button type="button" class="btn btn-primary" id="btn-setup-save-draft">Zapisz roboczo</button>
                     <button type="button" class="btn btn-positive" id="btn-setup-save-sign">Zapisz i dodaj e-podpis (Część I)</button>
                 </div>
             `
-            }
+        }
+        <div style="margin-top:14px; padding-top:12px; border-top:1px solid var(--border-color); display:flex; flex-wrap:wrap; gap:8px; align-items:center;">
+                <span class="text-muted" style="font-size:12px; margin-right:4px;">Współpraca z pocztą i kalendarzem:</span>
+                <button type="button" class="btn btn-sm" id="btn-setup-ics">Pobierz zaproszenie (.ics)</button>
+                <button type="button" class="btn btn-sm" id="btn-setup-mailto">Wyślij ustalenia mailem</button>
+            </div>
         </div>
 
         <div class="card">
@@ -220,6 +224,14 @@ export function renderSetupTab(workspace, onRefresh) {
                 additionalCriteriaIds: checked,
                 signByEvaluator,
             });
+            if (signByEvaluator) {
+                addIntegrationLog({
+                    channel: 'EMAIL',
+                    recipient: user.email || user.imie_nazwisko,
+                    subject: `Kryteria oceny okresowej (Część I) czekają na Twój e-podpis`,
+                    details: `Oceniający: ${evaluator ? evaluator.imie_nazwisko : 'Przełożony'} | Arkusz ${activeEvaluation.typ_arkusza} | Wybrane kryteria dodatkowe: ${checked.length}.`,
+                });
+            }
             showToast(
                 signByEvaluator
                     ? 'Zapisano i podpisano elektronicznie Część I arkusza!'
@@ -236,6 +248,68 @@ export function renderSetupTab(workspace, onRefresh) {
     if (btnDraft) btnDraft.addEventListener('click', () => submitSetup(false));
     const btnSign = container.querySelector('#btn-setup-save-sign');
     if (btnSign) btnSign.addEventListener('click', () => submitSetup(true));
+
+    function getSelectedCriteriaNames() {
+        const additionalIds = Array.from(container.querySelectorAll('input[name="additional-crit"]:checked')).map((el) =>
+            Number(el.value)
+        );
+        const allIds = [...mandatoryIds, ...additionalIds];
+        return allIds
+            .map((id) => {
+                const found = state.dictionaries.criteria.find((x) => x.id === id);
+                return found ? `- ${found.nazwa}` : null;
+            })
+            .filter(Boolean)
+            .join('\n');
+    }
+
+    const btnIcs = container.querySelector('#btn-setup-ics');
+    if (btnIcs) {
+        btnIcs.addEventListener('click', () => {
+            const meetingDate =
+                container.querySelector('#setup-interview-date').value ||
+                activeEvaluation.termin_wyznaczenia_kryteriow ||
+                new Date().toISOString().slice(0, 10);
+            const notes = container.querySelector('#setup-interview-notes').value.trim();
+            const desc =
+                `Rozmowa wstępna rozpoczynająca okres oceny okresowej (Arkusz ${activeEvaluation.typ_arkusza}).\n\n` +
+                `Kryteria do omówienia:\n${getSelectedCriteriaNames()}` +
+                (notes ? `\n\nWstępne cele / notatki:\n${notes}` : '');
+
+            downloadCalendarInvite({
+                title: `Rozmowa wstępna (ocena okresowa) — ${user.imie_nazwisko}`,
+                date: meetingDate,
+                description: desc,
+                attendeeEmail: user.email || '',
+                attendeeName: user.imie_nazwisko,
+                organizerEmail: evaluator ? evaluator.email || '' : '',
+                organizerName: evaluator ? evaluator.imie_nazwisko : '',
+                filename: `rozmowa-wstepna-${user.id}.ics`,
+            });
+        });
+    }
+
+    const btnMailto = container.querySelector('#btn-setup-mailto');
+    if (btnMailto) {
+        btnMailto.addEventListener('click', () => {
+            const meetingDate = container.querySelector('#setup-interview-date').value || 'do uzgodnienia';
+            const notes = container.querySelector('#setup-interview-notes').value.trim();
+            const body =
+                `Dzień dobry,\n\n` +
+                `przesyłam podsumowanie kryteriów do rozmowy wstępnej w ramach oceny okresowej (Arkusz ${activeEvaluation.typ_arkusza}).\n` +
+                `Planowana data rozmowy: ${meetingDate}\n\n` +
+                `Kryteria oceny:\n${getSelectedCriteriaNames()}\n` +
+                (notes ? `\nUstalenia i oczekiwania:\n${notes}\n` : '') +
+                `\nPozdrawiam,\n${evaluator ? evaluator.imie_nazwisko : 'Przełożony'}`;
+
+            openMailto({
+                to: user.email || 'pracownik@urzad.gov.pl',
+                subject: `Ocena okresowa — rozmowa wstępna i kryteria (Arkusz ${activeEvaluation.typ_arkusza})`,
+                body,
+                details: `Wysłano zestawienie kryteriów przed/po rozmowie wstępnej (${user.imie_nazwisko}).`,
+            });
+        });
+    }
 
     const hrForm = container.querySelector('#hr-event-form');
     if (hrForm) {

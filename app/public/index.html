@@ -22,6 +22,8 @@
     <div class="topbar-controls">
       <label for="quick-role-select">Przełącz rolę (Demo):</label>
       <select id="quick-role-select"></select>
+      <button id="btn-open-integrations" class="btn btn-sm" type="button">E-mail / EZD (<span
+          id="integrations-count">0</span>)</button>
       <button id="btn-reset-mock" class="btn btn-sm hidden" type="button">Resetuj dane demo</button>
       <button id="btn-logout" class="btn btn-sm hidden" type="button">Ekran startowy</button>
     </div>
@@ -196,8 +198,10 @@
             </div>
 
             <div id="tag-criteria-section" class="form-group">
-              <div style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:8px; margin-bottom:6px;">
-                <label style="margin-bottom:0;">Powiązane kryteria oceny (wybierz co najmniej 1 dla tagu kompetencyjnego)</label>
+              <div
+                style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:8px; margin-bottom:6px;">
+                <label style="margin-bottom:0;">Powiązane kryteria oceny (wybierz co najmniej 1 dla tagu
+                  kompetencyjnego)</label>
                 <span class="text-muted" id="tag-criteria-counter" style="font-size:12px;">Wybrano: 0</span>
               </div>
               <div id="tag-criteria-archived-note" class="alert-box alert-info hidden" style="margin-bottom:8px;"></div>
@@ -205,7 +209,8 @@
             </div>
 
             <div id="tag-wellbeing-info" class="alert-box alert-wellbeing hidden">
-              <strong>Tag dobrostanowy (Wirtualny HR Partner):</strong> Tagi tej kategorii służą wyłącznie do sygnalizowania przeciążenia lub nadgodzin i nie są mapowane na kryteria punktowe oceny.
+              <strong>Tag dobrostanowy (Wirtualny HR Partner):</strong> Tagi tej kategorii służą wyłącznie do
+              sygnalizowania przeciążenia lub nadgodzin i nie są mapowane na kryteria punktowe oceny.
             </div>
 
             <div style="display:flex; flex-wrap:wrap; gap:8px;">
@@ -218,7 +223,8 @@
         <div class="card">
           <div class="card-header">
             <h2>Słownik tagów i powiązań z kryteriami</h2>
-            <span class="text-muted" style="font-size:12px;">Usunięcie (wycofanie) tagu zachowuje wszystkie wcześniejsze przypisania w dzienniku i ocenach</span>
+            <span class="text-muted" style="font-size:12px;">Usunięcie (wycofanie) tagu zachowuje wszystkie wcześniejsze
+              przypisania w dzienniku i ocenach</span>
           </div>
           <div class="admin-toolbar">
             <div class="evidence-filters" style="margin:0;">
@@ -226,7 +232,8 @@
               <button type="button" class="filter-btn" data-admin-tag-filter="active">Aktywne</button>
               <button type="button" class="filter-btn" data-admin-tag-filter="archived">Wycofane (Archiwum)</button>
             </div>
-            <input type="text" id="admin-tag-search" placeholder="Szukaj tagu po nazwie lub opisie..." style="max-width:280px;">
+            <input type="text" id="admin-tag-search" placeholder="Szukaj tagu po nazwie lub opisie..."
+              style="max-width:280px;">
           </div>
           <div class="table-wrap" id="admin-tags-table"></div>
         </div>
@@ -242,11 +249,14 @@
           <form id="admin-crit-form">
             <div class="form-group">
               <label for="crit-name">Nazwa kryterium (maks. 150 znaków)</label>
-              <input type="text" id="crit-name" maxlength="150" placeholder="np. Cyberbezpieczeństwo i ochrona danych" required>
+              <input type="text" id="crit-name" maxlength="150" placeholder="np. Cyberbezpieczeństwo i ochrona danych"
+                required>
             </div>
             <div class="form-group">
               <label for="crit-desc">Opis kryterium i wskaźniki oceny (każda linia to osobny podpunkt)</label>
-              <textarea id="crit-desc" style="min-height:110px;" placeholder="Przestrzeganie zasad bezpieczeństwa informacji i RODO.&#10;Zgłaszanie incydentów bezpieczeństwa zgodnie z procedurą." required></textarea>
+              <textarea id="crit-desc" style="min-height:110px;"
+                placeholder="Przestrzeganie zasad bezpieczeństwa informacji i RODO.&#10;Zgłaszanie incydentów bezpieczeństwa zgodnie z procedurą."
+                required></textarea>
             </div>
             <div class="form-group">
               <label>Przypisanie do arkuszy oceny (co najmniej 1 arkusz)</label>
@@ -287,7 +297,8 @@
         <div class="card">
           <div class="card-header">
             <h2>Słownik kryteriów oceny i przypisań do arkuszy</h2>
-            <span class="text-muted" style="font-size:12px;">Wycofanie kryterium zachowuje wszystkie wcześniejsze wyniki i powiązania historyczne</span>
+            <span class="text-muted" style="font-size:12px;">Wycofanie kryterium zachowuje wszystkie wcześniejsze wyniki
+              i powiązania historyczne</span>
           </div>
           <div class="admin-toolbar">
             <div class="evidence-filters" style="margin:0;">
@@ -303,7 +314,31 @@
     </section>
 
   </main>
+  <div id="integrations-modal"
+    style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.55); z-index:9999; align-items:center; justify-content:center; padding:16px;">
+    <div class="card" style="width:100%; max-width:920px; max-height:85vh; overflow:auto; margin:0;">
+      <div class="card-header">
+        <div>
+          <h2>Dziennik integracji — Poczta E-mail i system EZD</h2>
+          <span class="text-muted" style="font-size:13px;">Podgląd powiadomień e-mail, zaproszeń kalendarzowych (.ics)
+            oraz przesyłek dokumentacji do EZD (JRWA 2120)</span>
+        </div>
+        <button type="button" class="btn btn-sm" id="btn-close-integrations">Zamknij</button>
+      </div>
 
+      <div
+        style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:12px;">
+        <div class="evidence-filters" style="margin:0;">
+          <button type="button" class="filter-btn active" data-int-filter="ALL">Wszystkie</button>
+          <button type="button" class="filter-btn" data-int-filter="EMAIL">E-mail / Kalendarz</button>
+          <button type="button" class="filter-btn" data-int-filter="EZD">Obieg EZD</button>
+        </div>
+        <button type="button" class="btn btn-xs" id="btn-reset-integrations">Resetuj dziennik</button>
+      </div>
+
+      <div class="table-wrap" id="integrations-log-list"></div>
+    </div>
+  </div>
   <div id="print-sheet-area"></div>
   <div id="toast-container"></div>
 
