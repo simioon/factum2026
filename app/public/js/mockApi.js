@@ -1821,6 +1821,7 @@ export const mockApi = {
                     srednia_punktow: ev.srednia_punktow,
                     wynik_ogolny: ev.wynik_ogolny,
                     data_zapoznania_z_ocena: ev.data_zapoznania_z_ocena,
+                    evaluation_status: ev.status,
                     pracownik_nazwa: p ? p.imie_nazwisko : '',
                     pracownik_stanowisko: p ? p.nazwa_stanowiska : '',
                     oceniajacy_nazwa: o ? o.imie_nazwisko : '',
@@ -1905,13 +1906,7 @@ export const mockApi = {
         if (!ap) throw createError(404, 'Sprzeciw nie istnieje.');
         if (ap.decyzja_dyrektora !== 'OCZEKUJE') throw createError(400, 'Ten sprzeciw został już rozpatrzony.');
 
-        const {
-            decyzja_dyrektora,
-            uzasadnienie_decyzji = '',
-            amendedScores = null,
-            amendedJustification = null,
-            amendedIprz = null,
-        } = payload || {};
+        const { decyzja_dyrektora, uzasadnienie_decyzji = '' } = payload || {};
 
         if (
             !['ODRZUCONY', 'UWZGLEDNIONY_ZMIANA', 'UWZGLEDNIONY_PONOWNA_OCENA', 'NIEROZPATRZONY_W_TERMINIE'].includes(
@@ -1930,22 +1925,10 @@ export const mockApi = {
         if (decyzja_dyrektora === 'ODRZUCONY') {
             oldEval.status = 'ZAKONCZONA';
         } else if (decyzja_dyrektora === 'UWZGLEDNIONY_ZMIANA') {
-            if (amendedScores && typeof amendedScores === 'object' && Object.keys(amendedScores).length > 0) {
-                const critRows = db.criteriaResults.filter((cr) => cr.ocena_id === oldEval.id);
-                const vals = [];
-                for (const row of critRows) {
-                    const ov = amendedScores[row.kryterium_id] ?? amendedScores[String(row.kryterium_id)];
-                    if (ov !== undefined) row.punkty = Number(ov);
-                    vals.push(Number(row.punkty));
-                }
-                const calc = calculateFinalResult(vals);
-                oldEval.srednia_punktow = calc.srednia_punktow;
-                oldEval.poziom_oceny = calc.poziom_oceny;
-                oldEval.wynik_ogolny = calc.wynik_ogolny;
-            }
-            if (amendedJustification) oldEval.uzasadnienie_oceny = String(amendedJustification).trim();
-            if (amendedIprz) oldEval.wnioski_iprz = String(amendedIprz).trim();
-            oldEval.status = 'ZAKONCZONA';
+            oldEval.status = 'PRZED_ROZMOWA_OCENIAJACA';
+            oldEval.podpis_ocena_oceniajacy_at = null;
+            oldEval.podpis_ocena_oceniany_at = null;
+            oldEval.data_zapoznania_z_ocena = null;
         } else {
             oldEval.status = 'UNIEWAZNIONA';
             const oldCritIds = db.criteriaResults

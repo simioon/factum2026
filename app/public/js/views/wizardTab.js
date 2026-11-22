@@ -57,12 +57,40 @@ export function renderWizardTab(workspace, onFinalized) {
         return;
     }
 
+    // Wstępne załadowanie zapisanych wcześniej punktów i tekstów (np. przy poprawce po odwołaniu)
+    if (state.wizard.loadedEvalId !== activeEvaluation.id) {
+        state.wizard.loadedEvalId = activeEvaluation.id;
+        state.wizard.stepIndex = 0;
+        state.wizard.scores = {};
+        for (const c of activeEvaluation.criteria || []) {
+            if (c.punkty !== null && c.punkty !== undefined) {
+                state.wizard.scores[c.kryterium_id] = Number(c.punkty);
+            }
+        }
+        state.wizard.justification = activeEvaluation.uzasadnienie_oceny || '';
+        state.wizard.iprz = activeEvaluation.wnioski_iprz || '';
+        state.wizard.selectedEvidenceKeys = [];
+        state.wizard.usedIprzPills = [];
+    }
+
     const activeCriteria = activeEvaluation.criteria || [];
     const totalSteps = activeCriteria.length + 1;
     const currentStep = Math.min(state.wizard.stepIndex, activeCriteria.length);
     state.wizard.stepIndex = currentStep;
 
     const progressPct = Math.round(((currentStep + 1) / totalSteps) * 100);
+    const approvedChangeAppeal = (activeEvaluation.appeals || []).find(
+        (a) => a.decyzja_dyrektora === 'UWZGLEDNIONY_ZMIANA'
+    );
+    const appealCorrectionBanner = approvedChangeAppeal
+        ? `
+        <div class="alert-box alert-negative" style="margin-bottom:12px;">
+            <strong>Ocena skierowana do poprawy przez Dyrektora Generalnego:</strong><br>
+            <span>Decyzja dyrektora: ${escapeHtml(approvedChangeAppeal.uzasadnienie_decyzji || 'Uwzględniono odwołanie — wymagana korekta oceny.')}</span><br>
+            <span class="text-muted" style="font-size:12px;">Argumentacja pracownika: ${escapeHtml(approvedChangeAppeal.uzasadnienie_pracownika || '—')}</span>
+        </div>
+    `
+        : '';
     const headerInfo = `
         <div class="card" style="background: var(--bg-subtle);">
             <div style="display:flex; flex-wrap:wrap; justify-content:space-between; gap:8px;">
@@ -123,6 +151,7 @@ export function renderWizardTab(workspace, onFinalized) {
             .join('');
 
         container.innerHTML =
+            appealCorrectionBanner +
             headerInfo +
             `
             <div class="card">
@@ -290,6 +319,7 @@ export function renderWizardTab(workspace, onFinalized) {
             : '<span class="badge badge-positive">Uzasadnienie fakultatywne</span>';
 
     container.innerHTML =
+        appealCorrectionBanner +
         headerInfo +
         `
         <div class="card">

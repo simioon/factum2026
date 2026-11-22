@@ -18,9 +18,9 @@ async function refreshUsersListOnly() {
     state.users = usersRes.users;
 }
 
-async function openEmployeeProfile(empId) {
+async function openEmployeeProfile(empId, tab = 'setup') {
     state.selectedEmployeeId = empId;
-    state.profileActiveTab = 'setup';
+    state.profileActiveTab = tab;
     resetWizardState();
     await loadAndRender();
 }

@@ -13,11 +13,22 @@ export function renderSubordinatesList(managerId, containerId, { onOpenProfile }
     const subs = state.users.filter((u) => u.przelozony_id === managerId);
 
     const appealAlerts = (state.appeals || [])
-        .filter((ap) => ap.oceniajacy_id === managerId && ap.decyzja_dyrektora === 'OCZEKUJE')
+        .filter(
+            (ap) =>
+                ap.oceniajacy_id === managerId &&
+                ap.decyzja_dyrektora === 'UWZGLEDNIONY_ZMIANA' &&
+                ap.evaluation_status === 'PRZED_ROZMOWA_OCENIAJACA'
+        )
         .map(
             (ap) => `
-            <div class="alert-box alert-negative">
-                <strong>Odwołanie od oceny:</strong> Pracownik ${escapeHtml(ap.pracownik_nazwa)} złożył sprzeciw (Status: ${escapeHtml(ap.decyzja_label || ap.decyzja_dyrektora)}).
+            <div class="alert-box alert-warning">
+                <strong>Ocena wymaga poprawy po decyzji Dyrektora:</strong>
+                ${escapeHtml(ap.pracownik_nazwa)} — ${escapeHtml(ap.uzasadnienie_decyzji || 'Dyrektor uwzględnił odwołanie i skierował ocenę do poprawy.')}
+                <div style="margin-top:8px;">
+                    <button type="button" class="btn btn-primary btn-sm" data-open-correction="${ap.pracownik_id}">
+                        Otwórz kreator poprawy oceny
+                    </button>
+                </div>
             </div>
         `
         )
@@ -63,6 +74,12 @@ export function renderSubordinatesList(managerId, containerId, { onOpenProfile }
     container.querySelectorAll('[data-open-employee]').forEach((btn) => {
         btn.addEventListener('click', () => {
             onOpenProfile(Number(btn.dataset.openEmployee));
+        });
+    });
+
+    container.querySelectorAll('[data-open-correction]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            onOpenProfile(Number(btn.dataset.openCorrection), 'wizard');
         });
     });
 }

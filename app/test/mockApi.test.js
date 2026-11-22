@@ -157,7 +157,36 @@ test('Offline mockApi reproduces full evaluation, HR event, visibility, appeal, 
         assert.equal(dec.newEvaluation.numer_podejscia, 2);
     });
 
-    await t.test('9. Director approves Jan rank request & resetMockDb restores clean state', async () => {
+    await t.test('9. Director requests correction -> evaluator notification data is available', async () => {
+        const ws = await mockApi.getWorkspace(tomasz.id, jan.id);
+        const scores = Object.fromEntries(ws.activeEvaluation.criteria.map((c) => [c.kryterium_id, 7]));
+        const finalized = await mockApi.finalizeEvaluation(
+            ws.activeEvaluation.id,
+            { scores, uzasadnienie_oceny: 'Wyniki zgodne z oczekiwaniami.' },
+            jan.id
+        );
+        const completed = await mockApi.acknowledgeEvaluation(finalized.evaluation.id, tomasz.id);
+        const appeal = await mockApi.createAppeal(
+            completed.evaluation.id,
+            { uzasadnienie_pracownika: 'Wnoszę o zmianę oceny.' },
+            tomasz.id
+        );
+
+        const decision = await mockApi.decideAppeal(
+            appeal.appeal.id,
+            { decyzja_dyrektora: 'UWZGLEDNIONY_ZMIANA', uzasadnienie_decyzji: 'Proszę poprawić punktację.' },
+            marek.id
+        );
+        assert.equal(decision.evaluation.status, 'PRZED_ROZMOWA_OCENIAJACA');
+        assert.equal(decision.evaluation.podpis_ocena_oceniajacy_at, null);
+
+        const evaluatorAppeals = await mockApi.getAppeals(jan.id);
+        const correction = evaluatorAppeals.appeals.find((item) => item.id === appeal.appeal.id);
+        assert.equal(correction.evaluation_status, 'PRZED_ROZMOWA_OCENIAJACA');
+        assert.equal(correction.oceniajacy_id, jan.id);
+    });
+
+    await t.test('10. Director approves Jan rank request & resetMockDb restores clean state', async () => {
         const rrList = await mockApi.getRankRequests(marek.id);
         const pending = rrList.rankRequests.find((r) => r.pracownik_id === jan.id && r.status_decyzji === 'OCZEKUJE');
         const dec = await mockApi.decideRankRequest(pending.id, { status_decyzji: 'ZATWIERDZONY' }, marek.id);

@@ -3,6 +3,7 @@ const STORAGE_KEY = 'cyfrowy_asystent_demo_user_id';
 export function createInitialWizardState() {
     return {
         stepIndex: 0,
+        loadedEvalId: null,
         scores: {},
         justification: '',
         iprz: '',
