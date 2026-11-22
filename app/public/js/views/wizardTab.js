@@ -444,22 +444,33 @@ export function renderWizardTab(workspace, onFinalized) {
         });
     });
 
-    container.querySelectorAll('[data-iprz-pill]').forEach((btn) => {
-        btn.addEventListener('click', () => {
-            const pillText = iprzPills[Number(btn.dataset.iprzPill)];
-            if (!pillText) return;
-            let currentText = iprzTa.value;
+container.querySelectorAll('[data-iprz-pill]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+        const pillText = iprzPills[Number(btn.dataset.iprzPill)];
+        if (!pillText) return;
+
+        let currentText = iprzTa.value;
+        const isAlreadyUsed = state.wizard.usedIprzPills.includes(pillText);
+        const bulletLine = `• ${pillText}`;
+
+        if (isAlreadyUsed) {
+            state.wizard.usedIprzPills = state.wizard.usedIprzPills.filter((p) => p !== pillText);
+            const keptLines = currentText
+                .split('\n')
+                .filter((line) => line.trim() !== bulletLine && line.trim() !== pillText);
+            currentText = keptLines.join('\n').replace(/\n{3,}/g, '\n\n').trimEnd();
+        } else {
             if (!currentText.includes(pillText)) {
                 const sep = currentText.trim().length > 0 ? '\n' : '';
-                currentText = `${currentText.trimEnd()}${sep}• ${pillText}`;
+                currentText = `${currentText.trimEnd()}${sep}${bulletLine}`;
             }
-            if (!state.wizard.usedIprzPills.includes(pillText)) {
-                state.wizard.usedIprzPills.push(pillText);
-            }
-            state.wizard.iprz = currentText;
-            renderWizardTab(workspace, onFinalized);
-        });
+            state.wizard.usedIprzPills.push(pillText);
+        }
+
+        state.wizard.iprz = currentText;
+        renderWizardTab(workspace, onFinalized);
     });
+});
 
     container.querySelector('#btn-wiz-back').addEventListener('click', () => {
         state.wizard.stepIndex = Math.max(0, state.wizard.stepIndex - 1);

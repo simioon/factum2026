@@ -2078,6 +2078,11 @@ export const mockApi = {
             throw createError(400, 'Nieprawidłowa decyzja.');
         }
 
+        const trimmedMotivation = String(motywacja_dyrektora || '').trim();
+        if (status_decyzji === 'ODRZUCONY' && !trimmedMotivation) {
+        throw createError(400, 'Uzasadnienie decyzji jest obowiązkowe przy odrzuceniu wniosku o stopień służbowy.');
+        }
+
         rr.status_decyzji = status_decyzji;
         rr.motywacja_dyrektora = String(motywacja_dyrektora || '').trim() || null;
         rr.data_decyzji = todayIso();
