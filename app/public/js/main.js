@@ -1,6 +1,7 @@
 import { api } from './api.js';
 import { resetWizardState, setCurrentUserId, state } from './state.js';
 import { getUserById, showToast } from './utils.js';
+import { initIntegrationsModal, resetIntegrationLogs } from './integrations.js';
 import { renderLoginScreen, renderTopbarSwitcher } from './views/loginView.js';
 import { renderEmployeePanel } from './views/employeeView.js';
 import { renderManagerPanel } from './views/managerView.js';
@@ -208,6 +209,7 @@ window.addEventListener('DOMContentLoaded', async () => {
                     btnReset.disabled = true;
                     try {
                         await api.resetDemoData();
+                        resetIntegrationLogs();
                         setCurrentUserId(null);
                         state.selectedEmployeeId = null;
                         state.editingTagId = null;
@@ -227,6 +229,7 @@ window.addEventListener('DOMContentLoaded', async () => {
             }
         }
         bindStaticNavigation();
+        initIntegrationsModal();
         await loadUsersAndDictionaries();
         await loadAndRender();
     } catch (err) {
