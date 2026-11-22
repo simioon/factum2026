@@ -76,11 +76,22 @@ router.get(
         if (evalIds.length > 0) {
             const [critRes, appRes] = await Promise.all([
                 query(
-                    `SELECT okw.ocena_id, okw.kryterium_id, okw.punkty, okw.komentarz_czastkowy, sk.nazwa
+                    `SELECT
+                        okw.ocena_id,
+                        okw.kryterium_id,
+                        okw.punkty,
+                        okw.komentarz_czastkowy,
+                        sk.nazwa,
+                        COALESCE(ak.typ_kryterium, 'DODATKOWE') AS typ_kryterium
                      FROM ocena_kryteria_wyniki okw
+                     JOIN oceny_okresowe oo ON oo.id = okw.ocena_id
                      JOIN slownik_kryteriow sk ON sk.id = okw.kryterium_id
+                     LEFT JOIN arkusz_kryteria ak
+                       ON ak.kryterium_id = okw.kryterium_id AND ak.kod_arkusza = oo.typ_arkusza
                      WHERE okw.ocena_id = ANY($1::int[])
-                     ORDER BY okw.id ASC;`,
+                     ORDER BY
+                        CASE WHEN ak.typ_kryterium = 'OBOWIAZKOWE' THEN 0 ELSE 1 END ASC,
+                        okw.id ASC;`,
                     [evalIds]
                 ),
                 query(

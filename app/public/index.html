@@ -5,9 +5,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Cyfrowy Asystent Ocen Okresowych — Służba Cywilna (HackNation 2026)</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./css/styles.css">
 </head>
 
@@ -17,12 +14,11 @@
     <div class="topbar-brand">
       <span>Cyfrowy Asystent Ocen Okresowych</span>
       <span class="badge-year">Służba Cywilna &bull; HackNation 2026</span>
-      <span id="mock-mode-badge" class="badge-year badge-mock hidden">Tryb podglądu UI (bez backendu)</span>
     </div>
     <div class="topbar-controls">
       <label for="quick-role-select">Przełącz rolę (Demo):</label>
       <select id="quick-role-select"></select>
-      <button id="btn-reset-mock" class="btn btn-sm hidden" type="button">Resetuj dane demo</button>
+      <button id="btn-reset-demo" class="btn btn-sm hidden" type="button">Resetuj dane demo</button>
       <button id="btn-logout" class="btn btn-sm hidden" type="button">Ekran startowy</button>
     </div>
   </header>
@@ -97,6 +93,7 @@
         <button class="tab-btn active" type="button" data-admin-tab="users">Użytkownicy i struktura podległości</button>
         <button class="tab-btn" type="button" data-admin-tab="tags">Zarządzanie tagami (Słownik)</button>
         <button class="tab-btn" type="button" data-admin-tab="criteria">Zarządzanie kryteriami oceny</button>
+        <button class="tab-btn" type="button" data-admin-tab="legal">Parametry prawne (Przepisy)</button>
       </div>
 
       <div id="admin-subview-users">
@@ -298,6 +295,66 @@
             <input type="text" id="admin-crit-search" placeholder="Szukaj kryterium..." style="max-width:280px;">
           </div>
           <div class="table-wrap" id="admin-criteria-table"></div>
+        </div>
+      </div>
+
+      <div id="admin-subview-legal" class="hidden">
+        <div class="card">
+          <div class="card-header">
+            <h2>Parametry prawne i terminy ocen okresowych</h2>
+            <span class="badge badge-primary">Elastyczna konfiguracja przepisów</span>
+          </div>
+          <div class="alert-box alert-info">
+            Zmiana parametrów obowiązuje natychmiast dla nowych cykli, konfiguracji kryteriów, zdarzeń kadrowych i odwołań — bez przebudowy kodu i bez wpływu na zamknięte oceny historyczne.
+          </div>
+          <form id="admin-legal-form">
+            <div class="grid-2">
+              <div class="form-group">
+                <label for="legal-cycle-months">Standardowa długość okresu oceny (miesiące)</label>
+                <input type="number" id="legal-cycle-months" min="1" max="60" required>
+                <span class="text-muted" style="font-size:12px;">Domyślnie ustawowo: 24 mies.</span>
+              </div>
+              <div class="form-group">
+                <label for="legal-cycle-months-neg">Okres oceny po ocenie negatywnej (miesiące)</label>
+                <input type="number" id="legal-cycle-months-neg" min="1" max="36" required>
+                <span class="text-muted" style="font-size:12px;">Domyślnie ustawowo: 6 mies.</span>
+              </div>
+              <div class="form-group">
+                <label for="legal-interview-normal">Termin rozmowy wstępnej — tryb standardowy (dni)</label>
+                <input type="number" id="legal-interview-normal" min="1" max="180" required>
+                <span class="text-muted" style="font-size:12px;">Domyślnie ustawowo: 30 dni</span>
+              </div>
+              <div class="form-group">
+                <label for="legal-interview-neg">Termin rozmowy wstępnej po ocenie negatywnej (dni)</label>
+                <input type="number" id="legal-interview-neg" min="1" max="90" required>
+                <span class="text-muted" style="font-size:12px;">Domyślnie ustawowo: 7 dni</span>
+              </div>
+              <div class="form-group">
+                <label for="legal-max-additional">Maksymalna liczba kryteriów dodatkowych</label>
+                <input type="number" id="legal-max-additional" min="0" max="10" required>
+                <span class="text-muted" style="font-size:12px;">Domyślnie ustawowo: 3 kryteria</span>
+              </div>
+              <div class="form-group">
+                <label for="legal-absence-threshold">Próg nieobecności przesuwającej termin oceny (dni)</label>
+                <input type="number" id="legal-absence-threshold" min="1" max="180" required>
+                <span class="text-muted" style="font-size:12px;">Domyślnie ustawowo: powyżej 30 dni</span>
+              </div>
+              <div class="form-group">
+                <label for="legal-appeal-days">Termin na złożenie sprzeciwu przez pracownika (dni)</label>
+                <input type="number" id="legal-appeal-days" min="1" max="60" required>
+                <span class="text-muted" style="font-size:12px;">Domyślnie ustawowo: 7 dni</span>
+              </div>
+              <div class="form-group">
+                <label for="legal-appeal-review-days">Termin rozpatrzenia sprzeciwu przez Dyrektora (dni)</label>
+                <input type="number" id="legal-appeal-review-days" min="1" max="90" required>
+                <span class="text-muted" style="font-size:12px;">Domyślnie ustawowo: 14 dni</span>
+              </div>
+            </div>
+            <div style="display:flex; flex-wrap:wrap; gap:10px; margin-top:6px;">
+              <button type="submit" class="btn btn-primary" id="btn-admin-legal-save">Zapisz parametry prawne</button>
+              <button type="button" class="btn" id="btn-admin-legal-reset">Przywróć wartości ustawowe (Ustawa SC)</button>
+            </div>
+          </form>
         </div>
       </div>
     </section>

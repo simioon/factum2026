@@ -1,7 +1,9 @@
 const { pool } = require('./pool');
 const { initDatabase } = require('./init');
+const { resetLegalConfig } = require('../domain/legalRules');
 
 async function resetDatabase() {
+    resetLegalConfig();
     await pool.query(`
         TRUNCATE TABLE
             wnioski_stopien_sluzbowy,
@@ -22,10 +24,16 @@ async function resetDatabase() {
     console.log('Database reset and re-seeded successfully.');
 }
 
-resetDatabase()
-    .then(() => pool.end())
-    .catch(async (err) => {
-        console.error('Database reset failed:', err);
-        await pool.end();
-        process.exit(1);
-    });
+if (require.main === module) {
+    resetDatabase()
+        .then(() => pool.end())
+        .catch(async (err) => {
+            console.error('Database reset failed:', err);
+            await pool.end();
+            process.exit(1);
+        });
+}
+
+module.exports = {
+    resetDatabase,
+};

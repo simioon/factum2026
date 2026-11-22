@@ -40,6 +40,8 @@ export const state = {
     adminCriteriaSearch: '',
     editingCriterionId: null,
 
+    adminLegalDefaults: null,
+
     wizard: createInitialWizardState(),
 };
 

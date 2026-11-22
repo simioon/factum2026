@@ -548,6 +548,45 @@ export function bindAdminEvents(onRefresh) {
             renderAdminCriteriaTable(refreshHandler);
         });
     }
+
+    // 4. Legal Config form & reset
+    const legalForm = document.getElementById('admin-legal-form');
+    const legalResetBtn = document.getElementById('btn-admin-legal-reset');
+
+    if (legalForm) {
+        legalForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const payload = {
+                cycleMonths: Number(document.getElementById('legal-cycle-months').value),
+                cycleMonthsAfterNegative: Number(document.getElementById('legal-cycle-months-neg').value),
+                initialInterviewDaysNormal: Number(document.getElementById('legal-interview-normal').value),
+                initialInterviewDaysAfterNegative: Number(document.getElementById('legal-interview-neg').value),
+                maxAdditionalCriteria: Number(document.getElementById('legal-max-additional').value),
+                absenceShiftThresholdDays: Number(document.getElementById('legal-absence-threshold').value),
+                appealDaysLimit: Number(document.getElementById('legal-appeal-days').value),
+                appealReviewDaysLimit: Number(document.getElementById('legal-appeal-review-days').value),
+            };
+            try {
+                await api.updateLegalConfig(payload);
+                showToast('Zapisano zaktualizowane parametry prawne.', 'success');
+                await onRefresh();
+            } catch (err) {
+                showToast(err.message, 'error');
+            }
+        });
+    }
+
+    if (legalResetBtn) {
+        legalResetBtn.addEventListener('click', async () => {
+            try {
+                await api.resetLegalConfig();
+                showToast('Przywrócono domyślne parametry ustawowe (Ustawa o służbie cywilnej).', 'success');
+                await onRefresh();
+            } catch (err) {
+                showToast(err.message, 'error');
+            }
+        });
+    }
 }
 
 function renderAdminUsersView(onRefresh) {
@@ -916,6 +955,24 @@ function renderAdminCriteriaTable(onRefresh) {
     });
 }
 
+function renderAdminLegalView() {
+    const cfg = (state.dictionaries && state.dictionaries.legalConfig) || {};
+    const fields = [
+        ['legal-cycle-months', cfg.cycleMonths ?? 24],
+        ['legal-cycle-months-neg', cfg.cycleMonthsAfterNegative ?? 6],
+        ['legal-interview-normal', cfg.initialInterviewDaysNormal ?? 30],
+        ['legal-interview-neg', cfg.initialInterviewDaysAfterNegative ?? 7],
+        ['legal-max-additional', cfg.maxAdditionalCriteria ?? 3],
+        ['legal-absence-threshold', cfg.absenceShiftThresholdDays ?? 30],
+        ['legal-appeal-days', cfg.appealDaysLimit ?? 7],
+        ['legal-appeal-review-days', cfg.appealReviewDaysLimit ?? 14],
+    ];
+    for (const [id, val] of fields) {
+        const el = document.getElementById(id);
+        if (el) el.value = String(val);
+    }
+}
+
 export function renderAdminPanel(onRefresh) {
     refreshHandler = onRefresh;
 
@@ -927,10 +984,12 @@ export function renderAdminPanel(onRefresh) {
     const subUsers = document.getElementById('admin-subview-users');
     const subTags = document.getElementById('admin-subview-tags');
     const subCrit = document.getElementById('admin-subview-criteria');
+    const subLegal = document.getElementById('admin-subview-legal');
 
     if (subUsers) subUsers.classList.toggle('hidden', state.adminActiveTab !== 'users');
     if (subTags) subTags.classList.toggle('hidden', state.adminActiveTab !== 'tags');
     if (subCrit) subCrit.classList.toggle('hidden', state.adminActiveTab !== 'criteria');
+    if (subLegal) subLegal.classList.toggle('hidden', state.adminActiveTab !== 'legal');
 
     if (state.adminActiveTab === 'users') {
         renderAdminUsersView(onRefresh);
@@ -954,5 +1013,7 @@ export function renderAdminPanel(onRefresh) {
             else resetCriterionForm();
         }
         renderAdminCriteriaTable(onRefresh);
+    } else if (state.adminActiveTab === 'legal') {
+        renderAdminLegalView();
     }
 }

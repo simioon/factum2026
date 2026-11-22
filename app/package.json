@@ -4,12 +4,10 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "preview": "node preview-server.js",
     "db:reset": "node db/reset.js",
-    "test:unit": "node --test test/legalRules.test.js",
-    "test:mock": "node --test test/mockApi.test.js",
+    "test:unit": "node --test test/legalRules.test.js test/dateFormat.test.js test/previousEvalSummary.test.js test/printSheet.test.js",
     "test:api": "node --test test/api.integration.test.js",
-    "test": "node --test test/*.test.js"
+    "test": "npm run test:unit"
   },
   "dependencies": {
     "express": "^4.21.2",

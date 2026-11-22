@@ -20,8 +20,12 @@ export function renderSetupTab(workspace, onRefresh) {
 
     const lastCompleted = pastEvaluations.find((e) => e.status === 'ZAKONCZONA') || null;
     const isAfterNeg = lastCompleted && lastCompleted.wynik_ogolny === 'NEGATYWNA';
-    const limitDays = isAfterNeg ? 7 : 30;
-    const maxAdditional = (state.dictionaries && state.dictionaries.legalConfig.maxAdditionalCriteria) || 3;
+    const legalCfg = (state.dictionaries && state.dictionaries.legalConfig) || {};
+    const limitDays = isAfterNeg
+        ? (legalCfg.initialInterviewDaysAfterNegative ?? 7)
+        : (legalCfg.initialInterviewDaysNormal ?? 30);
+    const maxAdditional = Number.isInteger(legalCfg.maxAdditionalCriteria) ? legalCfg.maxAdditionalCriteria : 3;
+    const absenceThreshold = legalCfg.absenceShiftThresholdDays ?? 30;
 
     const sheetConfig =
         (state.dictionaries && state.dictionaries.sheetCriteria[activeEvaluation.typ_arkusza]) ||
@@ -102,7 +106,7 @@ export function renderSetupTab(workspace, onRefresh) {
             <div class="alert-box ${isAfterNeg ? 'alert-negative' : 'alert-info'}">
                 <strong>Limit ustawowy na wyznaczenie kryteriów:</strong> ${limitDays} dni od startu cyklu (${escapeHtml(formatDate(activeEvaluation.data_rozpoczecia_cyklu))})
                 &rarr; termin upływa: <strong>${escapeHtml(formatDate(activeEvaluation.termin_wyznaczenia_kryteriow))}</strong>.
-                ${isAfterNeg ? ' (Skrócony termin 7 dni z powodu poprzedniej oceny negatywnej!)' : ''}
+                ${isAfterNeg ? ` (Skrócony termin ${limitDays} dni z powodu poprzedniej oceny negatywnej!)` : ''}
                 <br><strong>Planowana data oceny końcowej:</strong> ${escapeHtml(formatDate(activeEvaluation.planowana_data_oceny))}
             </div>
             ${signStatusHtml}
@@ -179,7 +183,7 @@ export function renderSetupTab(workspace, onRefresh) {
                     </div>
                     <div class="form-group">
                         <label for="hr-event-days">Dni przesunięcia terminu</label>
-                        <input type="number" id="hr-event-days" min="0" placeholder="Auto przy nieobecności >30 dni">
+                        <input type="number" id="hr-event-days" min="0" placeholder="Auto przy nieobecności >${absenceThreshold} dni">
                     </div>
                     <div class="form-group" style="grid-column: span 2;">
                         <label for="hr-event-desc">Opis zdarzenia</label>
