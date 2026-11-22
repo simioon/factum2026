@@ -67,6 +67,13 @@ router.patch(
         if (!ALLOWED_RANK_DECISIONS.has(status_decyzji)) {
             throw new HttpError(400, 'Nieprawidłowa decyzja (dozwolone: ZATWIERDZONY, ODRZUCONY).');
         }
+        const trimmedMotivation = String(motywacja_dyrektora || '').trim();
+        if (status_decyzji === 'ODRZUCONY' && !trimmedMotivation) {
+            throw new HttpError(
+                400,
+                'Uzasadnienie decyzji jest obowiązkowe przy odrzuceniu wniosku o stopień służbowy.'
+            );
+        }
 
         const result = await withTransaction(async (client) => {
             const rrRes = await client.query(

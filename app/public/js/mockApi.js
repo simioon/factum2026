@@ -430,7 +430,7 @@ function computeEmployeeAlerts({ activeEval, tasks = [], previousEval = null, to
             type: 'wellbeing',
             code: 'HR_PARTNER_OVERLOAD',
             title: 'Wirtualny HR Partner (Ryzyko przeciążenia / wypalenia)',
-            message: `Wykryto sygnały dobrostanowe (#Przeciążenie / #Nadgodziny: ${wellbeingSignals}) oraz ${negTotal} uwag (-). Sugerowane działanie: zaplanuj rozmowę wspierającą, sprawdź podział zadań z zastępstwa i czasowo zmień priorytety.`,
+            message: `Wykryto sygnały dobrostanowe (Przeciążenie / Nadgodziny: ${wellbeingSignals}) oraz ${negTotal} uwag (-). Sugerowane działanie: zaplanuj rozmowę wspierającą, sprawdź podział zadań z zastępstwa i czasowo zmień priorytety.`,
         });
     } else if (posTotal >= 5) {
         alerts.push({
@@ -516,7 +516,7 @@ function buildInitialMockDb() {
             aktualny_stopien_sluzbowy: 0,
             nazwa_stanowiska: 'Administrator Systemu IT',
             komorka_organizacyjna: 'Biuro Informatyki',
-            przelozony_id: 1,
+            przelozony_id: null,
             created_at: '2024-01-01T08:00:00.000Z',
         },
         {
@@ -709,33 +709,6 @@ function buildInitialMockDb() {
             created_at: '2025-01-10T08:00:00.000Z',
             updated_at: '2025-01-25T13:00:00.000Z',
         },
-        {
-            id: 7,
-            pracownik_id: 3,
-            oceniajacy_id: 1,
-            typ_arkusza: 'C',
-            numer_podejscia: 1,
-            poprzednia_ocena_id: null,
-            status: 'WYZNACZANIE_KRYTERIOW',
-            data_rozpoczecia_cyklu: '2025-03-01',
-            termin_wyznaczenia_kryteriow: '2025-03-31',
-            data_rozmowy_wstepnej: null,
-            planowana_data_oceny: '2027-03-01',
-            data_rozmowy_oceniajacej: null,
-            data_zapoznania_z_ocena: null,
-            oczekiwania_i_cele: null,
-            srednia_punktow: null,
-            poziom_oceny: null,
-            wynik_ogolny: null,
-            uzasadnienie_oceny: null,
-            wnioski_iprz: null,
-            podpis_kryteria_oceniajacy_at: null,
-            podpis_kryteria_oceniany_at: null,
-            podpis_ocena_oceniajacy_at: null,
-            podpis_ocena_oceniany_at: null,
-            created_at: '2025-03-01T08:00:00.000Z',
-            updated_at: '2025-03-01T08:00:00.000Z',
-        },
     ];
 
     const criteriaResults = [];
@@ -757,7 +730,6 @@ function buildInitialMockDb() {
     addCritRows(4, { 10: null, 8: null, 4: null, 11: null, 1: null, 9: null, 5: null });
     addCritRows(5, { 10: null, 8: null, 4: null, 11: null, 1: null, 7: null });
     addCritRows(6, { 13: null, 6: null, 4: null, 11: null, 1: null, 9: null });
-    addCritRows(7, { 10: null, 8: null, 4: null, 11: null, 1: null });
 
     const tasks = [
         {
@@ -825,23 +797,23 @@ function buildInitialMockDb() {
     const tagIdByName = Object.fromEntries(TAGS_CATALOG.map((t) => [t.nazwa, t.id]));
     let ttId = 1;
     const taskTags = [
-        { id: ttId++, zadanie_id: 1, tag_id: tagIdByName['#JakośćIProcedury'], polaryzacja: '+', komentarz: 'Zero błędów formalnych, wzorowa zgodność z wytycznymi.' },
-        { id: ttId++, zadanie_id: 1, tag_id: tagIdByName['#AnalizaIRyzyko'], polaryzacja: '+', komentarz: 'Szybko wychwyciła rozbieżność w kosztach terenowych.' },
-        { id: ttId++, zadanie_id: 1, tag_id: tagIdByName['#TerminowośćIPriorytety'], polaryzacja: '+', komentarz: 'Raport oddany 2 dni przed terminem.' },
-        { id: ttId++, zadanie_id: 2, tag_id: tagIdByName['#JasnyPrzekaz'], polaryzacja: '+', komentarz: 'Bardzo przejrzyste i zrozumiałe pismo urzędowe.' },
-        { id: ttId++, zadanie_id: 2, tag_id: tagIdByName['#TaktIEmpatia'], polaryzacja: '+', komentarz: 'Spokojna, kulturalna rozmowa mimo dużych emocji interesanta.' },
-        { id: ttId++, zadanie_id: 3, tag_id: tagIdByName['#PracaZespołowa'], polaryzacja: '+', komentarz: 'Chętnie pomagała i dbała o świetną atmosferę.' },
-        { id: ttId++, zadanie_id: 3, tag_id: tagIdByName['#RozwójIWiedza'], polaryzacja: '+', komentarz: 'Opracowała krótką instrukcję PDF dla całego wydziału.' },
-        { id: ttId++, zadanie_id: 3, tag_id: tagIdByName['#TerminowośćIPriorytety'], polaryzacja: '-', komentarz: 'Przez dodatkowe wsparcie opóźniła własną notatkę służbową o 1 dzień.' },
-        { id: ttId++, zadanie_id: 4, tag_id: tagIdByName['#TerminowośćIPriorytety'], polaryzacja: '-', komentarz: 'Przekroczony termin oddania 2 protokołów kontrolnych.' },
-        { id: ttId++, zadanie_id: 4, tag_id: tagIdByName['#ElastycznośćIStres'], polaryzacja: '-', komentarz: 'Widoczne duże zmęczenie i trudność z presją czasu.' },
-        { id: ttId++, zadanie_id: 4, tag_id: tagIdByName['#Przeciążenie'], polaryzacja: '-', komentarz: 'Przejął pełen zakres obowiązków za nieobecnego współpracownika.' },
-        { id: ttId++, zadanie_id: 5, tag_id: tagIdByName['#JakośćIProcedury'], polaryzacja: '-', komentarz: 'Drobne pomyłki w numeracji załączników wymagające poprawy.' },
-        { id: ttId++, zadanie_id: 5, tag_id: tagIdByName['#Nadgodziny'], polaryzacja: '-', komentarz: 'Zostawał po godzinach 3 razy w tym samym tygodniu.' },
-        { id: ttId++, zadanie_id: 5, tag_id: tagIdByName['#PracaZespołowa'], polaryzacja: '+', komentarz: 'Mimo zmęczenia bez problemu przekazał komplet akt koleżance.' },
-        { id: ttId++, zadanie_id: 6, tag_id: tagIdByName['#DelegowanieIMonitoring'], polaryzacja: '+', komentarz: 'Jasny podział odpowiedzialności w zespole.' },
-        { id: ttId++, zadanie_id: 6, tag_id: tagIdByName['#MotywowanieIFeedback'], polaryzacja: '+', komentarz: 'Regularne rozmowy wspierające z pracownikami.' },
-        { id: ttId++, zadanie_id: 6, tag_id: tagIdByName['#Decyzyjność'], polaryzacja: '+', komentarz: 'Sprawne podjęcie decyzji o przesunięciu zasobów.' },
+        { id: ttId++, zadanie_id: 1, tag_id: tagIdByName['Jakość I Procedury'], polaryzacja: '+', komentarz: 'Zero błędów formalnych, wzorowa zgodność z wytycznymi.' },
+        { id: ttId++, zadanie_id: 1, tag_id: tagIdByName['Analiza I Ryzyko'], polaryzacja: '+', komentarz: 'Szybko wychwyciła rozbieżność w kosztach terenowych.' },
+        { id: ttId++, zadanie_id: 1, tag_id: tagIdByName['Terminowość I Priorytety'], polaryzacja: '+', komentarz: 'Raport oddany 2 dni przed terminem.' },
+        { id: ttId++, zadanie_id: 2, tag_id: tagIdByName['Jasny Przekaz'], polaryzacja: '+', komentarz: 'Bardzo przejrzyste i zrozumiałe pismo urzędowe.' },
+        { id: ttId++, zadanie_id: 2, tag_id: tagIdByName['Takt I Empatia'], polaryzacja: '+', komentarz: 'Spokojna, kulturalna rozmowa mimo dużych emocji interesanta.' },
+        { id: ttId++, zadanie_id: 3, tag_id: tagIdByName['Praca Zespołowa'], polaryzacja: '+', komentarz: 'Chętnie pomagała i dbała o świetną atmosferę.' },
+        { id: ttId++, zadanie_id: 3, tag_id: tagIdByName['Rozwój I Wiedza'], polaryzacja: '+', komentarz: 'Opracowała krótką instrukcję PDF dla całego wydziału.' },
+        { id: ttId++, zadanie_id: 3, tag_id: tagIdByName['Terminowość I Priorytety'], polaryzacja: '-', komentarz: 'Przez dodatkowe wsparcie opóźniła własną notatkę służbową o 1 dzień.' },
+        { id: ttId++, zadanie_id: 4, tag_id: tagIdByName['Terminowość I Priorytety'], polaryzacja: '-', komentarz: 'Przekroczony termin oddania 2 protokołów kontrolnych.' },
+        { id: ttId++, zadanie_id: 4, tag_id: tagIdByName['Elastyczność I Stres'], polaryzacja: '-', komentarz: 'Widoczne duże zmęczenie i trudność z presją czasu.' },
+        { id: ttId++, zadanie_id: 4, tag_id: tagIdByName['Przeciążenie'], polaryzacja: '-', komentarz: 'Przejął pełen zakres obowiązków za nieobecnego współpracownika.' },
+        { id: ttId++, zadanie_id: 5, tag_id: tagIdByName['Jakość I Procedury'], polaryzacja: '-', komentarz: 'Drobne pomyłki w numeracji załączników wymagające poprawy.' },
+        { id: ttId++, zadanie_id: 5, tag_id: tagIdByName['Nadgodziny'], polaryzacja: '-', komentarz: 'Zostawał po godzinach 3 razy w tym samym tygodniu.' },
+        { id: ttId++, zadanie_id: 5, tag_id: tagIdByName['Praca Zespołowa'], polaryzacja: '+', komentarz: 'Mimo zmęczenia bez problemu przekazał komplet akt koleżance.' },
+        { id: ttId++, zadanie_id: 6, tag_id: tagIdByName['Delegowanie I Monitoring'], polaryzacja: '+', komentarz: 'Jasny podział odpowiedzialności w zespole.' },
+        { id: ttId++, zadanie_id: 6, tag_id: tagIdByName['Motywowanie I Feedback'], polaryzacja: '+', komentarz: 'Regularne rozmowy wspierające z pracownikami.' },
+        { id: ttId++, zadanie_id: 6, tag_id: tagIdByName['Decyzyjność'], polaryzacja: '+', komentarz: 'Sprawne podjęcie decyzji o przesunięciu zasobów.' },
     ];
 
     const rankRequests = [
@@ -1338,6 +1310,46 @@ export const mockApi = {
             throw createError(400, 'Nieprawidłowa rola użytkownika.');
         }
 
+        const normalizedArkusz = arkusz === '' || arkusz === undefined ? null : arkusz;
+        if (normalizedArkusz !== null && !['A', 'B', 'C'].includes(normalizedArkusz)) {
+            throw createError(400, 'Nieprawidłowy kod arkusza (dozwolone: A, B, C lub null).');
+        }
+        if (rola === 'OCENIANY' && normalizedArkusz !== 'C') {
+            throw createError(400, 'Dla roli OCENIANY dozwolony jest wyłącznie Arkusz C.');
+        }
+        if (rola === 'OCENIAJACY' && normalizedArkusz !== 'A' && normalizedArkusz !== 'B') {
+            throw createError(400, 'Dla roli OCENIAJACY dozwolony jest wyłącznie Arkusz A lub B.');
+        }
+        if ((rola === 'DYREKTOR' || rola === 'ADMIN') && normalizedArkusz !== null) {
+            throw createError(400, 'Dla roli DYREKTOR oraz ADMIN arkusz musi być pusty (null).');
+        }
+
+        const stopien = Number(aktualny_stopien_sluzbowy);
+        if (!Number.isInteger(stopien) || stopien < 0 || stopien > 9) {
+            throw createError(400, 'Stopień służbowy musi być liczbą całkowitą od 0 do 9.');
+        }
+        if (rola === 'ADMIN' && stopien !== 0) {
+            throw createError(400, 'Konto techniczne ADMIN nie może posiadać stopnia służbowego.');
+        }
+
+        const evaluatorId =
+            przelozony_id === null || przelozony_id === '' || przelozony_id === undefined
+                ? null
+                : Number(przelozony_id);
+        if (evaluatorId !== null && (!Number.isInteger(evaluatorId) || evaluatorId <= 0)) {
+            throw createError(400, 'Nieprawidłowe ID przełożonego.');
+        }
+        if ((rola === 'DYREKTOR' || rola === 'ADMIN') && evaluatorId !== null) {
+            throw createError(400, 'Role DYREKTOR oraz ADMIN nie mogą mieć przypisanego przełożonego.');
+        }
+        if (evaluatorId !== null) {
+            const evalRow = db.users.find((u) => u.id === evaluatorId);
+            if (!evalRow) throw createError(400, 'Wybrany przełożony nie istnieje.');
+            if (!['OCENIAJACY', 'DYREKTOR'].includes(evalRow.rola)) {
+                throw createError(400, 'Przełożony musi mieć rolę OCENIAJACY lub DYREKTOR.');
+            }
+        }
+
         let finalEmail = email && String(email).trim().toLowerCase();
         if (!finalEmail) {
             const base = slugifyEmail(imie_nazwisko);
@@ -1352,14 +1364,13 @@ export const mockApi = {
             throw createError(409, 'Konflikt unikalności danych (email już istnieje).');
         }
 
-        const evaluatorId = przelozony_id ? Number(przelozony_id) : null;
         const newRow = {
             id: db.seq.users++,
             imie_nazwisko: String(imie_nazwisko).trim(),
             email: finalEmail,
-            arkusz: arkusz || null,
+            arkusz: normalizedArkusz,
             rola,
-            aktualny_stopien_sluzbowy: Number(aktualny_stopien_sluzbowy || 0),
+            aktualny_stopien_sluzbowy: rola === 'ADMIN' ? 0 : stopien,
             nazwa_stanowiska: String(nazwa_stanowiska).trim(),
             komorka_organizacyjna: String(komorka_organizacyjna || 'Nowa komórka organizacyjna').trim(),
             przelozony_id: evaluatorId,
@@ -1368,7 +1379,7 @@ export const mockApi = {
         db.users.push(newRow);
 
         let activeEvaluation = null;
-        if (evaluatorId && newRow.arkusz && newRow.rola !== 'DYREKTOR') {
+        if (evaluatorId && newRow.arkusz && newRow.rola !== 'DYREKTOR' && newRow.rola !== 'ADMIN') {
             activeEvaluation = createActiveCycleInDb(db, {
                 pracownikId: newRow.id,
                 oceniajacyId: evaluatorId,
@@ -1392,6 +1403,9 @@ export const mockApi = {
 
         const target = db.users.find((u) => u.id === uid);
         if (!target) throw createError(404, 'Użytkownik nie istnieje.');
+        if ((target.rola === 'DYREKTOR' || target.rola === 'ADMIN') && newEvalId !== null) {
+            throw createError(400, 'Nie można przypisać przełożonego dla roli DYREKTOR lub ADMIN.');
+        }
 
         let newEvaluatorName = null;
         if (newEvalId !== null) {
@@ -1419,7 +1433,13 @@ export const mockApi = {
                 opis: `Zmiana oceniającego na: ${newEvaluatorName}`,
             };
             db.hrEvents.push(loggedEvent);
-        } else if (!active && newEvalId !== null && target.arkusz && target.rola !== 'DYREKTOR') {
+        } else if (
+            !active &&
+            newEvalId !== null &&
+            target.arkusz &&
+            target.rola !== 'DYREKTOR' &&
+            target.rola !== 'ADMIN'
+        ) {
             createActiveCycleInDb(db, {
                 pracownikId: target.id,
                 oceniajacyId: newEvalId,
@@ -1474,6 +1494,14 @@ export const mockApi = {
         const currentUser = getCurrentUserOrThrow(db, currentUserId);
         const ev = db.evaluations.find((e) => e.id === Number(evalId));
         if (!ev) throw createError(404, 'Ocena okresowa nie istnieje.');
+        const canView =
+            currentUser.id === ev.pracownik_id ||
+            currentUser.id === ev.oceniajacy_id ||
+            currentUser.rola === 'DYREKTOR' ||
+            currentUser.rola === 'ADMIN';
+        if (!canView) {
+            throw createError(403, 'Brak uprawnień do podglądu tej oceny okresowej.');
+        }
         const includePrivateTasks = currentUser.id !== ev.pracownik_id;
         return { evaluation: hydrateEvaluation(db, ev, { includePrivateTasks }) };
     },
@@ -1563,6 +1591,9 @@ export const mockApi = {
         const ev = db.evaluations.find((e) => e.id === Number(evalId));
         if (!ev) throw createError(404, 'Ocena okresowa nie istnieje.');
         assertCanEvaluate(currentUser, ev);
+        if (!EDITABLE_SETUP_STATUSES.has(ev.status)) {
+            throw createError(400, `Nie można rozpocząć rozmowy oceniającej w statusie ${ev.status}.`);
+        }
         ev.status = 'PRZED_ROZMOWA_OCENIAJACA';
         if (payload && payload.data_rozmowy_oceniajacej) {
             ev.data_rozmowy_oceniajacej = String(payload.data_rozmowy_oceniajacej);
@@ -1828,11 +1859,21 @@ export const mockApi = {
         assertCanEvaluate(currentUser, ev);
 
         const { typ_zdarzenia, data_od, data_do = null, dni_przesuniecia_terminu, opis = '' } = payload || {};
+        if (
+            !['NIEOBECNOSC_POWYZEJ_MIESIACA', 'ZMIANA_STANOWISKA', 'ZMIANA_OCENIAJACEGO', 'INNE'].includes(
+                typ_zdarzenia
+            )
+        ) {
+            throw createError(400, 'Nieprawidłowy typ zdarzenia kadrowego.');
+        }
         if (!data_od) throw createError(400, 'Pole data_od jest wymagane.');
 
         let shiftDays = 0;
         if (dni_przesuniecia_terminu !== undefined && dni_przesuniecia_terminu !== null && dni_przesuniecia_terminu !== '') {
             shiftDays = Number(dni_przesuniecia_terminu);
+            if (!Number.isInteger(shiftDays) || shiftDays < 0) {
+                throw createError(400, 'Liczba dni przesunięcia terminu musi być liczbą całkowitą >= 0.');
+            }
         } else if (typ_zdarzenia === 'NIEOBECNOSC_POWYZEJ_MIESIACA' && data_do) {
             const duration = diffDaysIso(String(data_od), String(data_do));
             if (duration === null || duration < 0) {

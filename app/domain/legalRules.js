@@ -265,7 +265,7 @@ function computeEmployeeAlerts({ activeEval, tasks = [], previousEval = null, to
             type: 'wellbeing',
             code: 'HR_PARTNER_OVERLOAD',
             title: 'Wirtualny HR Partner (Ryzyko przeciążenia / wypalenia)',
-            message: `Wykryto sygnały dobrostanowe (#Przeciążenie / #Nadgodziny: ${wellbeingSignals}) oraz ${negTotal} uwag (-). Sugerowane działanie: zaplanuj rozmowę wspierającą, sprawdź podział zadań z zastępstwa i czasowo zmień priorytety.`,
+            message: `Wykryto sygnały dobrostanowe (Przeciążenie / Nadgodziny: ${wellbeingSignals}) oraz ${negTotal} uwag (-). Sugerowane działanie: zaplanuj rozmowę wspierającą, sprawdź podział zadań z zastępstwa i czasowo zmień priorytety.`,
         });
     } else if (posTotal >= 5) {
         alerts.push({

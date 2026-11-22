@@ -171,7 +171,7 @@ test('Full end-to-end evaluation, HR events, visibility, appeals, and rank workf
         });
         assert.equal(privTask.status, 201);
 
-        const wellbeingTag = dictionaries.tags.find((tg) => tg.nazwa === '#Przeciążenie');
+        const wellbeingTag = dictionaries.tags.find((tg) => tg.nazwa === 'Przeciążenie');
         const tagAdd = await apiReq(`/api/tasks/${privTask.data.task.id}/tags`, {
             method: 'POST',
             userId: jan.id,
@@ -191,14 +191,20 @@ test('Full end-to-end evaluation, HR events, visibility, appeals, and rank workf
             empWs.data.activeEvaluation.tasks.some((x) => x.id === privTask.data.task.id),
             false
         );
+        // Verify seeded tags hydrated properly (no missing tag names)
+        for (const t of empWs.data.activeEvaluation.tasks) {
+            for (const tg of t.tags) {
+                assert.ok(tg.tag_nazwa && tg.tag_nazwa.length > 0);
+            }
+        }
     });
 
     await t.test('5b. Batch tagging on task creation & existing task + atomic rollback on invalid tag', async () => {
         const ws = await apiReq(`/api/users/${tomasz.id}/workspace`, { userId: jan.id });
         const evalId = ws.data.activeEvaluation.id;
-        const tJasny = dictionaries.tags.find((tg) => tg.nazwa === '#JasnyPrzekaz');
-        const tTerm = dictionaries.tags.find((tg) => tg.nazwa === '#TerminowośćIPriorytety');
-        const tWell = dictionaries.tags.find((tg) => tg.nazwa === '#Nadgodziny');
+        const tJasny = dictionaries.tags.find((tg) => tg.nazwa === 'Jasny Przekaz');
+        const tTerm = dictionaries.tags.find((tg) => tg.nazwa === 'Terminowość I Priorytety');
+        const tWell = dictionaries.tags.find((tg) => tg.nazwa === 'Nadgodziny');
 
         // Create task with initial mixed-polarity batch + shared explaining note
         const created = await apiReq(`/api/evaluations/${evalId}/tasks`, {
@@ -397,6 +403,14 @@ test('Full end-to-end evaluation, HR events, visibility, appeals, and rank workf
             (r) => r.pracownik_id === jan.id && r.status_decyzji === 'OCZEKUJE'
         );
         assert.ok(pending);
+
+        // Rejecting without motivation must fail with 400
+        const rejectNoReason = await apiReq(`/api/rank-requests/${pending.id}/decide`, {
+            method: 'PATCH',
+            userId: marek.id,
+            body: { status_decyzji: 'ODRZUCONY', motywacja_dyrektora: '   ' },
+        });
+        assert.equal(rejectNoReason.status, 400);
 
         const decided = await apiReq(`/api/rank-requests/${pending.id}/decide`, {
             method: 'PATCH',

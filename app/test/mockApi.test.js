@@ -104,7 +104,7 @@ test('Offline mockApi reproduces full evaluation, HR event, visibility, appeal, 
             { tytul: 'Prywatna obserwacja', widocznosc: 'TYLKO_MENEDZER' },
             jan.id
         );
-        const wellbeingTag = dictionaries.tags.find((tg) => tg.nazwa === '#Przeciążenie');
+        const wellbeingTag = dictionaries.tags.find((tg) => tg.nazwa === 'Przeciążenie');
         const tagRes = await mockApi.addTagToTask(
             priv.task.id,
             { tag_id: wellbeingTag.id, polaryzacja: '+', komentarz: 'Alert' },
@@ -114,14 +114,19 @@ test('Offline mockApi reproduces full evaluation, HR event, visibility, appeal, 
 
         const empWs = await mockApi.getWorkspace(tomasz.id, tomasz.id);
         assert.equal(empWs.activeEvaluation.tasks.some((x) => x.id === priv.task.id), false);
+        for (const t of empWs.activeEvaluation.tasks) {
+            for (const tg of t.tags) {
+                assert.ok(tg.tag_nazwa && tg.tag_nazwa.length > 0);
+            }
+        }
     });
 
     await t.test('5b. Batch tagging on task creation & existing task + atomic rejection', async () => {
         const ws = await mockApi.getWorkspace(tomasz.id, jan.id);
         const evalId = ws.activeEvaluation.id;
-        const tJasny = dictionaries.tags.find((tg) => tg.nazwa === '#JasnyPrzekaz');
-        const tTerm = dictionaries.tags.find((tg) => tg.nazwa === '#TerminowośćIPriorytety');
-        const tWell = dictionaries.tags.find((tg) => tg.nazwa === '#Nadgodziny');
+        const tJasny = dictionaries.tags.find((tg) => tg.nazwa === 'Jasny Przekaz');
+        const tTerm = dictionaries.tags.find((tg) => tg.nazwa === 'Terminowość I Priorytety');
+        const tWell = dictionaries.tags.find((tg) => tg.nazwa === 'Nadgodziny');
 
         const created = await mockApi.createTask(
             evalId,
@@ -254,6 +259,10 @@ test('Offline mockApi reproduces full evaluation, HR event, visibility, appeal, 
     await t.test('10. Director approves Jan rank request & resetMockDb restores clean state', async () => {
         const rrList = await mockApi.getRankRequests(marek.id);
         const pending = rrList.rankRequests.find((r) => r.pracownik_id === jan.id && r.status_decyzji === 'OCZEKUJE');
+        await assert.rejects(
+            () => mockApi.decideRankRequest(pending.id, { status_decyzji: 'ODRZUCONY', motywacja_dyrektora: '  ' }, marek.id),
+            (err) => err.status === 400
+        );
         const dec = await mockApi.decideRankRequest(pending.id, { status_decyzji: 'ZATWIERDZONY' }, marek.id);
         assert.equal(dec.newRank, 5);
 
