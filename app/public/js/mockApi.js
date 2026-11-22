@@ -1094,6 +1094,71 @@ function assertCanEvaluate(currentUser, evalRow) {
     }
 }
 
+function prepareBatchTaskTags(rawTags, batchComment = '') {
+    if (!Array.isArray(rawTags) || rawTags.length === 0) {
+        throw createError(400, 'Wybierz przynajmniej jeden tag do przypisania.');
+    }
+    const normalizedBatchComment = String(batchComment || '').trim() || null;
+    const prepared = [];
+
+    for (const item of rawTags) {
+        if (!item || typeof item !== 'object') {
+            throw createError(400, 'Nieprawidłowy element na liście tagów.');
+        }
+        const tagDef = item.tag_id
+            ? TAGS_CATALOG.find((t) => t.id === Number(item.tag_id))
+            : item.tag_nazwa
+              ? TAGS_CATALOG.find((t) => t.nazwa === String(item.tag_nazwa))
+              : null;
+        if (!tagDef) throw createError(400, 'Wybrany tag nie istnieje w słowniku.');
+
+        let normPol =
+            item.polaryzacja === '+' || item.polaryzacja === 'pos'
+                ? '+'
+                : item.polaryzacja === '-' || item.polaryzacja === 'neg'
+                  ? '-'
+                  : null;
+        if (tagDef.kategoria === 'DOBROSTAN') normPol = '-';
+        if (!normPol) {
+            throw createError(400, "Nieprawidłowa polaryzacja tagu (dozwolone: '+' lub '-').");
+        }
+
+        const itemComment =
+            item.komentarz !== undefined && item.komentarz !== null && String(item.komentarz).trim() !== ''
+                ? String(item.komentarz).trim()
+                : normalizedBatchComment;
+
+        prepared.push({
+            tagDef,
+            polaryzacja: normPol,
+            komentarz: itemComment,
+        });
+    }
+
+    return prepared;
+}
+
+function insertPreparedTaskTags(db, taskId, preparedTags) {
+    const inserted = [];
+    for (const entry of preparedTags) {
+        const row = {
+            id: db.seq.taskTags++,
+            zadanie_id: taskId,
+            tag_id: entry.tagDef.id,
+            polaryzacja: entry.polaryzacja,
+            komentarz: entry.komentarz,
+        };
+        db.taskTags.push(row);
+        inserted.push({
+            ...row,
+            tag_nazwa: entry.tagDef.nazwa,
+            kategoria: entry.tagDef.kategoria,
+            tag_opis: entry.tagDef.opis,
+        });
+    }
+    return inserted;
+}
+
 export const mockApi = {
     async getDictionaries() {
         return {
@@ -1665,11 +1730,24 @@ export const mockApi = {
         if (!ev) throw createError(404, 'Ocena okresowa nie istnieje.');
         assertCanEvaluate(currentUser, ev);
 
-        const { tytul, opis = '', data_zdarzenia = todayIso(), widocznosc = 'OBIE_STRONY' } = payload || {};
+        const {
+            tytul,
+            opis = '',
+            data_zdarzenia = todayIso(),
+            widocznosc = 'OBIE_STRONY',
+            tags = [],
+            komentarz = '',
+        } = payload || {};
         if (!tytul || !String(tytul).trim()) throw createError(400, 'Tytuł zadania/obserwacji jest wymagany.');
         if (!['OBIE_STRONY', 'TYLKO_MENEDZER'].includes(widocznosc)) {
             throw createError(400, 'Nieprawidłowa widoczność.');
         }
+        if (tags !== undefined && tags !== null && !Array.isArray(tags)) {
+            throw createError(400, 'Pole tags musi być tablicą.');
+        }
+
+        // Pre-validate batch tags atomically before mutating db
+        const preparedTags = Array.isArray(tags) && tags.length > 0 ? prepareBatchTaskTags(tags, komentarz) : [];
 
         const newTask = {
             id: db.seq.tasks++,
@@ -1682,8 +1760,10 @@ export const mockApi = {
             created_at: nowTs(),
         };
         db.tasks.push(newTask);
+
+        const insertedTags = insertPreparedTaskTags(db, newTask.id, preparedTags);
         saveDb(db);
-        return { task: { ...newTask, tags: [] } };
+        return { task: { ...newTask, tags: insertedTags } };
     },
 
     async deleteTask(taskId, currentUserId) {
@@ -1708,33 +1788,23 @@ export const mockApi = {
         const ev = db.evaluations.find((e) => e.id === task.ocena_id);
         assertCanEvaluate(currentUser, ev);
 
-        const { tag_id, tag_nazwa, polaryzacja, komentarz = '' } = payload || {};
-        const tagDef = tag_id
-            ? TAGS_CATALOG.find((t) => t.id === Number(tag_id))
-            : TAGS_CATALOG.find((t) => t.nazwa === String(tag_nazwa));
-        if (!tagDef) throw createError(400, 'Wybrany tag nie istnieje w słowniku.');
+        const body = payload || {};
+        const isBatch = Object.prototype.hasOwnProperty.call(body, 'tags');
+        const rawTags = isBatch
+            ? body.tags
+            : [
+                  {
+                      tag_id: body.tag_id,
+                      tag_nazwa: body.tag_nazwa,
+                      polaryzacja: body.polaryzacja,
+                      komentarz: body.komentarz,
+                  },
+              ];
 
-        let normPol = polaryzacja === '+' || polaryzacja === 'pos' ? '+' : polaryzacja === '-' || polaryzacja === 'neg' ? '-' : null;
-        if (!normPol) throw createError(400, "Nieprawidłowa polaryzacja tagu (dozwolone: '+' lub '-').");
-        if (tagDef.kategoria === 'DOBROSTAN') normPol = '-';
-
-        const row = {
-            id: db.seq.taskTags++,
-            zadanie_id: task.id,
-            tag_id: tagDef.id,
-            polaryzacja: normPol,
-            komentarz: String(komentarz || '').trim() || null,
-        };
-        db.taskTags.push(row);
+        const prepared = prepareBatchTaskTags(rawTags, body.komentarz || '');
+        const taskTags = insertPreparedTaskTags(db, task.id, prepared);
         saveDb(db);
-        return {
-            taskTag: {
-                ...row,
-                tag_nazwa: tagDef.nazwa,
-                kategoria: tagDef.kategoria,
-                tag_opis: tagDef.opis,
-            },
-        };
+        return { taskTags, taskTag: taskTags[0] };
     },
 
     async deleteTaskTag(taskId, taskTagId, currentUserId) {

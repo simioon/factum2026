@@ -193,6 +193,81 @@ test('Full end-to-end evaluation, HR events, visibility, appeals, and rank workf
         );
     });
 
+    await t.test('5b. Batch tagging on task creation & existing task + atomic rollback on invalid tag', async () => {
+        const ws = await apiReq(`/api/users/${tomasz.id}/workspace`, { userId: jan.id });
+        const evalId = ws.data.activeEvaluation.id;
+        const tJasny = dictionaries.tags.find((tg) => tg.nazwa === '#JasnyPrzekaz');
+        const tTerm = dictionaries.tags.find((tg) => tg.nazwa === '#TerminowośćIPriorytety');
+        const tWell = dictionaries.tags.find((tg) => tg.nazwa === '#Nadgodziny');
+
+        // Create task with initial mixed-polarity batch + shared explaining note
+        const created = await apiReq(`/api/evaluations/${evalId}/tasks`, {
+            method: 'POST',
+            userId: jan.id,
+            body: {
+                tytul: 'Wpis z wsadowym tagowaniem',
+                widocznosc: 'OBIE_STRONY',
+                tags: [
+                    { tag_id: tJasny.id, polaryzacja: '+' },
+                    { tag_id: tTerm.id, polaryzacja: '-' },
+                    { tag_id: tWell.id, polaryzacja: '+' }, // DOBROSTAN auto-forced to '-'
+                ],
+                komentarz: 'Wspólna notatka wyjaśniająca dla całego zestawu.',
+            },
+        });
+        assert.equal(created.status, 201);
+        assert.equal(created.data.task.tags.length, 3);
+        assert.equal(created.data.task.tags[0].polaryzacja, '+');
+        assert.equal(created.data.task.tags[1].polaryzacja, '-');
+        assert.equal(created.data.task.tags[2].polaryzacja, '-');
+        for (const tg of created.data.task.tags) {
+            assert.equal(tg.komentarz, 'Wspólna notatka wyjaśniająca dla całego zestawu.');
+        }
+
+        // Batch-add tags to existing task
+        const taskId = created.data.task.id;
+        const batchAdd = await apiReq(`/api/tasks/${taskId}/tags`, {
+            method: 'POST',
+            userId: jan.id,
+            body: {
+                tags: [
+                    { tag_id: tJasny.id, polaryzacja: '-' },
+                    { tag_id: tTerm.id, polaryzacja: '+' },
+                ],
+                komentarz: 'Drugi wsad z notatką.',
+            },
+        });
+        assert.equal(batchAdd.status, 201);
+        assert.equal(batchAdd.data.taskTags.length, 2);
+        assert.equal(batchAdd.data.taskTags[0].komentarz, 'Drugi wsad z notatką.');
+
+        // Empty batch rejected with 400
+        const emptyBatch = await apiReq(`/api/tasks/${taskId}/tags`, {
+            method: 'POST',
+            userId: jan.id,
+            body: { tags: [], komentarz: 'Pusty zestaw' },
+        });
+        assert.equal(emptyBatch.status, 400);
+
+        // Partial invalid batch rolls back atomically (zero new rows inserted)
+        const invalidBatch = await apiReq(`/api/tasks/${taskId}/tags`, {
+            method: 'POST',
+            userId: jan.id,
+            body: {
+                tags: [
+                    { tag_id: tJasny.id, polaryzacja: '+' },
+                    { tag_id: 999999, polaryzacja: '+' },
+                ],
+                komentarz: 'Nie powinno się zapisać',
+            },
+        });
+        assert.equal(invalidBatch.status, 400);
+
+        const afterWs = await apiReq(`/api/users/${tomasz.id}/workspace`, { userId: jan.id });
+        const savedTask = afterWs.data.activeEvaluation.tasks.find((x) => x.id === taskId);
+        assert.equal(savedTask.tags.length, 5); // 3 initial + 2 valid batch, 0 from rolled-back batch
+    });
+
     await t.test('6. Negative evaluation requires justification (400 if empty)', async () => {
         const ws = await apiReq(`/api/users/${tomasz.id}/workspace`, { userId: jan.id });
         const evalId = ws.data.activeEvaluation.id;

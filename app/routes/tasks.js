@@ -17,6 +17,94 @@ async function getEvaluationOrThrow(db, evalId) {
     return res.rows[0];
 }
 
+async function insertBatchTaskTags(client, taskId, rawTags, batchComment = '') {
+    if (!Array.isArray(rawTags) || rawTags.length === 0) {
+        throw new HttpError(400, 'Wybierz przynajmniej jeden tag do przypisania.');
+    }
+
+    const normalizedBatchComment = String(batchComment || '').trim() || null;
+
+    // Fetch referenced tags in bulk
+    const ids = [...new Set(rawTags.map((item) => Number(item && item.tag_id)).filter((n) => Number.isInteger(n) && n > 0))];
+    const names = [...new Set(rawTags.map((item) => (item && item.tag_nazwa ? String(item.tag_nazwa) : null)).filter(Boolean))];
+
+    const tagById = new Map();
+    const tagByName = new Map();
+
+    if (ids.length > 0) {
+        const resById = await client.query('SELECT * FROM slownik_tagow WHERE id = ANY($1::int[]);', [ids]);
+        for (const r of resById.rows) {
+            tagById.set(r.id, r);
+            tagByName.set(r.nazwa, r);
+        }
+    }
+    if (names.length > 0) {
+        const resByName = await client.query('SELECT * FROM slownik_tagow WHERE nazwa = ANY($1::varchar[]);', [names]);
+        for (const r of resByName.rows) {
+            tagById.set(r.id, r);
+            tagByName.set(r.nazwa, r);
+        }
+    }
+
+    // Validate entire batch before inserting anything
+    const prepared = [];
+    for (const item of rawTags) {
+        if (!item || typeof item !== 'object') {
+            throw new HttpError(400, 'Nieprawidłowy element na liście tagów.');
+        }
+
+        const tagRow = item.tag_id
+            ? tagById.get(Number(item.tag_id))
+            : item.tag_nazwa
+              ? tagByName.get(String(item.tag_nazwa))
+              : null;
+
+        if (!tagRow) {
+            throw new HttpError(400, 'Wybrany tag nie istnieje w słowniku.');
+        }
+
+        let normalizedPol = null;
+        if (item.polaryzacja === '+' || item.polaryzacja === 'pos') normalizedPol = '+';
+        else if (item.polaryzacja === '-' || item.polaryzacja === 'neg') normalizedPol = '-';
+
+        if (tagRow.kategoria === 'DOBROSTAN') {
+            normalizedPol = '-';
+        }
+        if (!normalizedPol) {
+            throw new HttpError(400, "Nieprawidłowa polaryzacja tagu (dozwolone: '+' lub '-').");
+        }
+
+        const itemComment =
+            item.komentarz !== undefined && item.komentarz !== null && String(item.komentarz).trim() !== ''
+                ? String(item.komentarz).trim()
+                : normalizedBatchComment;
+
+        prepared.push({
+            tagRow,
+            polaryzacja: normalizedPol,
+            komentarz: itemComment,
+        });
+    }
+
+    const inserted = [];
+    for (const entry of prepared) {
+        const insRes = await client.query(
+            `INSERT INTO zadanie_tagi (zadanie_id, tag_id, polaryzacja, komentarz)
+             VALUES ($1, $2, $3, $4)
+             RETURNING *;`,
+            [taskId, entry.tagRow.id, entry.polaryzacja, entry.komentarz]
+        );
+        inserted.push({
+            ...insRes.rows[0],
+            tag_nazwa: entry.tagRow.nazwa,
+            kategoria: entry.tagRow.kategoria,
+            tag_opis: entry.tagRow.opis,
+        });
+    }
+
+    return inserted;
+}
+
 router.get(
     '/evaluations/:evalId/tasks',
     requireUser,
@@ -76,6 +164,8 @@ router.post(
             opis = '',
             data_zdarzenia = todayIso(),
             widocznosc = 'OBIE_STRONY',
+            tags = [],
+            komentarz = '',
         } = req.body || {};
 
         if (!tytul || !String(tytul).trim()) {
@@ -84,25 +174,37 @@ router.post(
         if (!ALLOWED_VISIBILITY.has(widocznosc)) {
             throw new HttpError(400, 'Nieprawidłowa widoczność (dozwolone: OBIE_STRONY, TYLKO_MENEDZER).');
         }
+        if (tags !== undefined && tags !== null && !Array.isArray(tags)) {
+            throw new HttpError(400, 'Pole tags musi być tablicą.');
+        }
 
-        const evalRow = await getEvaluationOrThrow({ query }, evalId);
-        assertCanEvaluate(req.currentUser, evalRow);
+        const task = await withTransaction(async (client) => {
+            const evalRow = await getEvaluationOrThrow(client, evalId);
+            assertCanEvaluate(req.currentUser, evalRow);
 
-        const insRes = await query(
-            `INSERT INTO zadania_obserwacje (ocena_id, autor_id, tytul, opis, data_zdarzenia, widocznosc)
-             VALUES ($1, $2, $3, $4, $5, $6)
-             RETURNING *;`,
-            [
-                evalId,
-                req.currentUser.id,
-                String(tytul).trim(),
-                String(opis || '').trim() || null,
-                String(data_zdarzenia || todayIso()),
-                widocznosc,
-            ]
-        );
+            const insRes = await client.query(
+                `INSERT INTO zadania_obserwacje (ocena_id, autor_id, tytul, opis, data_zdarzenia, widocznosc)
+                 VALUES ($1, $2, $3, $4, $5, $6)
+                 RETURNING *;`,
+                [
+                    evalId,
+                    req.currentUser.id,
+                    String(tytul).trim(),
+                    String(opis || '').trim() || null,
+                    String(data_zdarzenia || todayIso()),
+                    widocznosc,
+                ]
+            );
+            const createdTask = insRes.rows[0];
+            const insertedTags =
+                Array.isArray(tags) && tags.length > 0
+                    ? await insertBatchTaskTags(client, createdTask.id, tags, komentarz)
+                    : [];
 
-        res.status(201).json({ task: { ...insRes.rows[0], tags: [] } });
+            return { ...createdTask, tags: insertedTags };
+        });
+
+        res.status(201).json({ task });
     })
 );
 
@@ -142,9 +244,20 @@ router.post(
             throw new HttpError(400, 'Nieprawidłowe ID zadania.');
         }
 
-        const { tag_id, tag_nazwa, polaryzacja, komentarz = '' } = req.body || {};
+        const body = req.body || {};
+        const isBatchPayload = Object.prototype.hasOwnProperty.call(body, 'tags');
+        const rawTags = isBatchPayload
+            ? body.tags
+            : [
+                  {
+                      tag_id: body.tag_id,
+                      tag_nazwa: body.tag_nazwa,
+                      polaryzacja: body.polaryzacja,
+                      komentarz: body.komentarz,
+                  },
+              ];
 
-        const taskTag = await withTransaction(async (client) => {
+        const taskTags = await withTransaction(async (client) => {
             const taskRes = await client.query(
                 `SELECT zo.id, oo.oceniajacy_id
                  FROM zadania_obserwacje zo
@@ -157,44 +270,10 @@ router.post(
             }
             assertCanEvaluate(req.currentUser, { oceniajacy_id: taskRes.rows[0].oceniajacy_id });
 
-            let tagRow;
-            if (tag_id) {
-                const tr = await client.query('SELECT * FROM slownik_tagow WHERE id = $1;', [Number(tag_id)]);
-                tagRow = tr.rows[0];
-            } else if (tag_nazwa) {
-                const tr = await client.query('SELECT * FROM slownik_tagow WHERE nazwa = $1;', [String(tag_nazwa)]);
-                tagRow = tr.rows[0];
-            }
-            if (!tagRow) {
-                throw new HttpError(400, 'Wybrany tag nie istnieje w słowniku.');
-            }
-
-            let normalizedPol = null;
-            if (polaryzacja === '+' || polaryzacja === 'pos') normalizedPol = '+';
-            else if (polaryzacja === '-' || polaryzacja === 'neg') normalizedPol = '-';
-            if (!normalizedPol) {
-                throw new HttpError(400, "Nieprawidłowa polaryzacja tagu (dozwolone: '+' lub '-').");
-            }
-            if (tagRow.kategoria === 'DOBROSTAN') {
-                normalizedPol = '-';
-            }
-
-            const insRes = await client.query(
-                `INSERT INTO zadanie_tagi (zadanie_id, tag_id, polaryzacja, komentarz)
-                 VALUES ($1, $2, $3, $4)
-                 RETURNING *;`,
-                [taskId, tagRow.id, normalizedPol, String(komentarz || '').trim() || null]
-            );
-
-            return {
-                ...insRes.rows[0],
-                tag_nazwa: tagRow.nazwa,
-                kategoria: tagRow.kategoria,
-                tag_opis: tagRow.opis,
-            };
+            return insertBatchTaskTags(client, taskId, rawTags, body.komentarz || '');
         });
 
-        res.status(201).json({ taskTag });
+        res.status(201).json({ taskTags, taskTag: taskTags[0] });
     })
 );
 
