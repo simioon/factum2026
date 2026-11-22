@@ -25,6 +25,29 @@ const router = express.Router();
 const ALLOWED_ROLES = new Set(['OCENIANY', 'OCENIAJACY', 'DYREKTOR', 'ADMIN']);
 const ALLOWED_SHEETS = new Set(['A', 'B', 'C']);
 
+function isValidRoleAndSheet(rola, arkusz) {
+    if (rola === 'OCENIANY') {
+        return arkusz === 'C';
+    }
+    if (rola === 'OCENIAJACY') {
+        return arkusz === 'A' || arkusz === 'B';
+    }
+    if (rola === 'DYREKTOR' || rola === 'ADMIN') {
+        return arkusz === null;
+    }
+    return false;
+}
+
+function getRoleSheetErrorMessage(rola) {
+    if (rola === 'OCENIANY') {
+        return 'Dla roli OCENIANY dozwolony jest wyłącznie Arkusz C.';
+    }
+    if (rola === 'OCENIAJACY') {
+        return 'Dla roli OCENIAJACY dozwolony jest wyłącznie Arkusz A lub B.';
+    }
+    return 'Dla roli DYREKTOR oraz ADMIN arkusz musi być pusty (null).';
+}
+
 router.get(
     '/users',
     asyncHandler(async (req, res) => {
@@ -279,19 +302,42 @@ router.post(
         if (!ALLOWED_ROLES.has(rola)) {
             throw new HttpError(400, 'Nieprawidłowa rola użytkownika.');
         }
-        if (arkusz !== null && arkusz !== undefined && !ALLOWED_SHEETS.has(arkusz)) {
+
+        const normalizedArkusz = arkusz === '' || arkusz === undefined ? null : arkusz;
+        if (normalizedArkusz !== null && !ALLOWED_SHEETS.has(normalizedArkusz)) {
             throw new HttpError(400, 'Nieprawidłowy kod arkusza (dozwolone: A, B, C lub null).');
         }
+        if (!isValidRoleAndSheet(rola, normalizedArkusz)) {
+            throw new HttpError(400, getRoleSheetErrorMessage(rola));
+        }
+
         const stopien = Number(aktualny_stopien_sluzbowy);
         if (!Number.isInteger(stopien) || stopien < 0 || stopien > 9) {
             throw new HttpError(400, 'Stopień służbowy musi być liczbą całkowitą od 0 do 9.');
         }
+        if (rola === 'ADMIN' && stopien !== 0) {
+            throw new HttpError(400, 'Konto techniczne ADMIN nie może posiadać stopnia służbowego.');
+        }
 
-        const evaluatorId = przelozony_id ? Number(przelozony_id) : null;
+        const evaluatorId =
+            przelozony_id === null || przelozony_id === '' || przelozony_id === undefined
+                ? null
+                : Number(przelozony_id);
+
+        if (evaluatorId !== null && (!Number.isInteger(evaluatorId) || evaluatorId <= 0)) {
+            throw new HttpError(400, 'Nieprawidłowe ID przełożonego.');
+        }
+        if ((rola === 'DYREKTOR' || rola === 'ADMIN') && evaluatorId !== null) {
+            throw new HttpError(400, 'Role DYREKTOR oraz ADMIN nie mogą mieć przypisanego przełożonego.');
+        }
+
         if (evaluatorId !== null) {
             const evalCheck = await query('SELECT id, rola FROM uzytkownicy WHERE id = $1;', [evaluatorId]);
             if (evalCheck.rows.length === 0) {
                 throw new HttpError(400, 'Wybrany przełożony nie istnieje.');
+            }
+            if (!['OCENIAJACY', 'DYREKTOR'].includes(evalCheck.rows[0].rola)) {
+                throw new HttpError(400, 'Przełożony musi mieć rolę OCENIAJACY lub DYREKTOR.');
             }
         }
 
@@ -319,9 +365,9 @@ router.post(
                 [
                     String(imie_nazwisko).trim(),
                     finalEmail,
-                    arkusz || null,
+                    normalizedArkusz,
                     rola,
-                    stopien,
+                    rola === 'ADMIN' ? 0 : stopien,
                     String(nazwa_stanowiska).trim(),
                     String(komorka_organizacyjna || 'Nowa komórka organizacyjna').trim(),
                     evaluatorId,
@@ -330,7 +376,7 @@ router.post(
             const newUser = formatUser(insertRes.rows[0]);
 
             let activeEvaluation = null;
-            if (evaluatorId && newUser.arkusz && newUser.rola !== 'DYREKTOR') {
+            if (evaluatorId && newUser.arkusz && newUser.rola !== 'DYREKTOR' && newUser.rola !== 'ADMIN') {
                 activeEvaluation = await createActiveCycle(client, {
                     pracownikId: newUser.id,
                     oceniajacyId: evaluatorId,
@@ -370,6 +416,10 @@ router.patch(
             );
             if (targetRes.rows.length === 0) {
                 throw new HttpError(404, 'Użytkownik nie istnieje.');
+            }
+            const targetUser = targetRes.rows[0];
+            if ((targetUser.rola === 'DYREKTOR' || targetUser.rola === 'ADMIN') && newEvaluatorId !== null) {
+                throw new HttpError(400, 'Nie można przypisać przełożonego dla roli DYREKTOR lub ADMIN.');
             }
 
             let newEvaluatorName = null;
@@ -423,7 +473,13 @@ router.patch(
                     );
                     loggedEvent = evLog.rows[0];
                 }
-            } else if (activeRes.rows.length === 0 && newEvaluatorId !== null && updatedUser.arkusz && updatedUser.rola !== 'DYREKTOR') {
+            } else if (
+                activeRes.rows.length === 0 &&
+                newEvaluatorId !== null &&
+                updatedUser.arkusz &&
+                updatedUser.rola !== 'DYREKTOR' &&
+                updatedUser.rola !== 'ADMIN'
+            ) {
                 await createActiveCycle(client, {
                     pracownikId: updatedUser.id,
                     oceniajacyId: newEvaluatorId,
