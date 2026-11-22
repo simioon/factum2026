@@ -93,72 +93,212 @@
     </section>
 
     <section id="section-admin" class="hidden">
-      <div class="card">
-        <div class="card-header">
-          <h2>Dodaj nowego użytkownika</h2>
-          <span class="badge badge-primary">Panel Admina</span>
-        </div>
-        <form id="admin-add-user-form">
-          <div class="grid-2">
-            <div class="form-group">
-              <label for="new-name">Imię i nazwisko</label>
-              <input type="text" id="new-name" placeholder="np. Katarzyna Kaczmarek" required>
-            </div>
-            <div class="form-group">
-              <label for="new-email">Adres e-mail (opcjonalnie — wygeneruje się automatycznie)</label>
-              <input type="text" id="new-email" placeholder="np. katarzyna.kaczmarek@urzad.gov.pl">
-            </div>
-            <div class="form-group">
-              <label for="new-position">Nazwa stanowiska</label>
-              <input type="text" id="new-position" placeholder="np. Główny Specjalista ds. Prawnych" required>
-            </div>
-            <div class="form-group">
-              <label for="new-department">Komórka organizacyjna</label>
-              <input type="text" id="new-department" placeholder="np. Departament Prawny"
-                value="Wydział Analiz i Sprawozdawczości">
-            </div>
-            <div class="form-group">
-              <label for="new-sheet-type">Typ stanowiska (automatyczny dobór arkusza)</label>
-              <select id="new-sheet-type">
-                <option value="C">Stanowisko nie-kierownicze (Arkusz C)</option>
-                <option value="B">Bezpośrednie kierowanie pracownikami (Arkusz B)</option>
-                <option value="A">Kierownik urzędu w służbie cywilnej (Arkusz A)</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="new-role">Rola w systemie</label>
-              <select id="new-role">
-                <option value="OCENIANY">Oceniany (Pracownik)</option>
-                <option value="OCENIAJACY">Oceniający (Manager / Naczelnik)</option>
-                <option value="DYREKTOR">Dyrektor Generalny</option>
-                <option value="ADMIN">Administrator</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="new-employment">Status zatrudnienia</label>
-              <select id="new-employment">
-                <option value="UMOWA_NIEOKRESLONA">Pracownik SC (umowa na czas nieokreślony)</option>
-                <option value="MIANOWANIE">Urzędnik SC (mianowanie)</option>
-              </select>
-            </div>
-            <div class="form-group hidden" id="new-rank-group">
-              <label for="new-rank">Stopień służbowy (1–9)</label>
-              <input type="number" id="new-rank" min="1" max="9" value="1">
-            </div>
-            <div class="form-group">
-              <label for="new-evaluator">Przypisany przełożony (oceniający)</label>
-              <select id="new-evaluator"></select>
-            </div>
-          </div>
-          <button type="submit" class="btn btn-primary">Dodaj użytkownika do systemu</button>
-        </form>
+      <div class="tabs" id="admin-main-tabs">
+        <button class="tab-btn active" type="button" data-admin-tab="users">Użytkownicy i struktura podległości</button>
+        <button class="tab-btn" type="button" data-admin-tab="tags">Zarządzanie tagami (Słownik)</button>
+        <button class="tab-btn" type="button" data-admin-tab="criteria">Zarządzanie kryteriami oceny</button>
       </div>
 
-      <div class="card">
-        <div class="card-header">
-          <h2>Lista użytkowników i struktura podległości</h2>
+      <div id="admin-subview-users">
+        <div class="card">
+          <div class="card-header">
+            <h2>Dodaj nowego użytkownika</h2>
+            <span class="badge badge-primary">Panel Admina</span>
+          </div>
+          <form id="admin-add-user-form">
+            <div class="grid-2">
+              <div class="form-group">
+                <label for="new-name">Imię i nazwisko</label>
+                <input type="text" id="new-name" placeholder="np. Katarzyna Kaczmarek" required>
+              </div>
+              <div class="form-group">
+                <label for="new-email">Adres e-mail (opcjonalnie — wygeneruje się automatycznie)</label>
+                <input type="text" id="new-email" placeholder="np. katarzyna.kaczmarek@urzad.gov.pl">
+              </div>
+              <div class="form-group">
+                <label for="new-position">Nazwa stanowiska</label>
+                <input type="text" id="new-position" placeholder="np. Główny Specjalista ds. Prawnych" required>
+              </div>
+              <div class="form-group">
+                <label for="new-department">Komórka organizacyjna</label>
+                <input type="text" id="new-department" placeholder="np. Departament Prawny"
+                  value="Wydział Analiz i Sprawozdawczości">
+              </div>
+              <div class="form-group">
+                <label for="new-sheet-type">Typ stanowiska (automatyczny dobór arkusza)</label>
+                <select id="new-sheet-type">
+                  <option value="C">Stanowisko nie-kierownicze (Arkusz C)</option>
+                  <option value="B">Bezpośrednie kierowanie pracownikami (Arkusz B)</option>
+                  <option value="A">Kierownik urzędu w służbie cywilnej (Arkusz A)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="new-role">Rola w systemie</label>
+                <select id="new-role">
+                  <option value="OCENIANY">Oceniany (Pracownik)</option>
+                  <option value="OCENIAJACY">Oceniający (Manager / Naczelnik)</option>
+                  <option value="DYREKTOR">Dyrektor Generalny</option>
+                  <option value="ADMIN">Administrator</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="new-employment">Status zatrudnienia</label>
+                <select id="new-employment">
+                  <option value="UMOWA_NIEOKRESLONA">Pracownik SC (umowa na czas nieokreślony)</option>
+                  <option value="MIANOWANIE">Urzędnik SC (mianowanie)</option>
+                </select>
+              </div>
+              <div class="form-group hidden" id="new-rank-group">
+                <label for="new-rank">Stopień służbowy (1–9)</label>
+                <input type="number" id="new-rank" min="1" max="9" value="1">
+              </div>
+              <div class="form-group">
+                <label for="new-evaluator">Przypisany przełożony (oceniający)</label>
+                <select id="new-evaluator"></select>
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary">Dodaj użytkownika do systemu</button>
+          </form>
         </div>
-        <div class="table-wrap" id="admin-users-table"></div>
+
+        <div class="card">
+          <div class="card-header">
+            <h2>Lista użytkowników i struktura podległości</h2>
+          </div>
+          <div class="table-wrap" id="admin-users-table"></div>
+        </div>
+      </div>
+
+      <div id="admin-subview-tags" class="hidden">
+        <div class="card" id="admin-tag-editor-card">
+          <div class="card-header">
+            <h2 id="admin-tag-form-title">Dodaj nowy tag do słownika</h2>
+            <span class="badge badge-primary" id="admin-tag-form-badge">Nowy tag</span>
+          </div>
+          <div id="admin-tag-edit-warning" class="alert-box alert-warning hidden"></div>
+          <form id="admin-tag-form">
+            <div class="grid-3">
+              <div class="form-group">
+                <label for="tag-name">Nazwa tagu (maks. 60 znaków)</label>
+                <input type="text" id="tag-name" maxlength="60" placeholder="np. Cyberbezpieczeństwo" required>
+              </div>
+              <div class="form-group">
+                <label for="tag-category">Kategoria tagu</label>
+                <select id="tag-category">
+                  <option value="KOMPETENCYJNY">Kompetencyjny (zasila kryteria oceny)</option>
+                  <option value="DOBROSTAN">Dobrostan (Wirtualny HR Partner — nie obniża oceny)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="tag-desc">Krótki opis / podpowiedź (opcjonalnie)</label>
+                <input type="text" id="tag-desc" placeholder="np. ochrona danych / higiena cyfrowa">
+              </div>
+            </div>
+
+            <div id="tag-criteria-section" class="form-group">
+              <div style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:8px; margin-bottom:6px;">
+                <label style="margin-bottom:0;">Powiązane kryteria oceny (wybierz co najmniej 1 dla tagu kompetencyjnego)</label>
+                <span class="text-muted" id="tag-criteria-counter" style="font-size:12px;">Wybrano: 0</span>
+              </div>
+              <div id="tag-criteria-archived-note" class="alert-box alert-info hidden" style="margin-bottom:8px;"></div>
+              <div id="tag-criteria-checklist" class="criteria-checklist-grid"></div>
+            </div>
+
+            <div id="tag-wellbeing-info" class="alert-box alert-wellbeing hidden">
+              <strong>Tag dobrostanowy (Wirtualny HR Partner):</strong> Tagi tej kategorii służą wyłącznie do sygnalizowania przeciążenia lub nadgodzin i nie są mapowane na kryteria punktowe oceny.
+            </div>
+
+            <div style="display:flex; flex-wrap:wrap; gap:8px;">
+              <button type="submit" class="btn btn-primary" id="btn-admin-tag-submit">+ Dodaj tag</button>
+              <button type="button" class="btn hidden" id="btn-admin-tag-cancel">Anuluj edycję</button>
+            </div>
+          </form>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h2>Słownik tagów i powiązań z kryteriami</h2>
+            <span class="text-muted" style="font-size:12px;">Usunięcie (wycofanie) tagu zachowuje wszystkie wcześniejsze przypisania w dzienniku i ocenach</span>
+          </div>
+          <div class="admin-toolbar">
+            <div class="evidence-filters" style="margin:0;">
+              <button type="button" class="filter-btn active" data-admin-tag-filter="all">Wszystkie</button>
+              <button type="button" class="filter-btn" data-admin-tag-filter="active">Aktywne</button>
+              <button type="button" class="filter-btn" data-admin-tag-filter="archived">Wycofane (Archiwum)</button>
+            </div>
+            <input type="text" id="admin-tag-search" placeholder="Szukaj tagu po nazwie lub opisie..." style="max-width:280px;">
+          </div>
+          <div class="table-wrap" id="admin-tags-table"></div>
+        </div>
+      </div>
+
+      <div id="admin-subview-criteria" class="hidden">
+        <div class="card" id="admin-crit-editor-card">
+          <div class="card-header">
+            <h2 id="admin-crit-form-title">Dodaj nowe kryterium oceny</h2>
+            <span class="badge badge-primary" id="admin-crit-form-badge">Nowe kryterium</span>
+          </div>
+          <div id="admin-crit-edit-warning" class="alert-box alert-warning hidden"></div>
+          <form id="admin-crit-form">
+            <div class="form-group">
+              <label for="crit-name">Nazwa kryterium (maks. 150 znaków)</label>
+              <input type="text" id="crit-name" maxlength="150" placeholder="np. Cyberbezpieczeństwo i ochrona danych" required>
+            </div>
+            <div class="form-group">
+              <label for="crit-desc">Opis kryterium i wskaźniki oceny (każda linia to osobny podpunkt)</label>
+              <textarea id="crit-desc" style="min-height:110px;" placeholder="Przestrzeganie zasad bezpieczeństwa informacji i RODO.&#10;Zgłaszanie incydentów bezpieczeństwa zgodnie z procedurą." required></textarea>
+            </div>
+            <div class="form-group">
+              <label>Przypisanie do arkuszy oceny (co najmniej 1 arkusz)</label>
+              <div class="sheet-role-grid">
+                <div class="form-group" style="margin-bottom:0;">
+                  <label for="crit-sheet-A">Arkusz A (Kierownik urzędu)</label>
+                  <select id="crit-sheet-A">
+                    <option value="DODATKOWE">Dodatkowe</option>
+                    <option value="OBOWIAZKOWE">Obowiązkowe</option>
+                    <option value="BRAK">Nie dotyczy</option>
+                  </select>
+                </div>
+                <div class="form-group" style="margin-bottom:0;">
+                  <label for="crit-sheet-B">Arkusz B (Kierujący zespołem)</label>
+                  <select id="crit-sheet-B">
+                    <option value="DODATKOWE">Dodatkowe</option>
+                    <option value="OBOWIAZKOWE">Obowiązkowe</option>
+                    <option value="BRAK">Nie dotyczy</option>
+                  </select>
+                </div>
+                <div class="form-group" style="margin-bottom:0;">
+                  <label for="crit-sheet-C">Arkusz C (Nie-kierownicze)</label>
+                  <select id="crit-sheet-C">
+                    <option value="DODATKOWE">Dodatkowe</option>
+                    <option value="OBOWIAZKOWE">Obowiązkowe</option>
+                    <option value="BRAK">Nie dotyczy</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div style="display:flex; flex-wrap:wrap; gap:8px;">
+              <button type="submit" class="btn btn-primary" id="btn-admin-crit-submit">+ Dodaj kryterium</button>
+              <button type="button" class="btn hidden" id="btn-admin-crit-cancel">Anuluj edycję</button>
+            </div>
+          </form>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h2>Słownik kryteriów oceny i przypisań do arkuszy</h2>
+            <span class="text-muted" style="font-size:12px;">Wycofanie kryterium zachowuje wszystkie wcześniejsze wyniki i powiązania historyczne</span>
+          </div>
+          <div class="admin-toolbar">
+            <div class="evidence-filters" style="margin:0;">
+              <button type="button" class="filter-btn active" data-admin-crit-filter="all">Wszystkie</button>
+              <button type="button" class="filter-btn" data-admin-crit-filter="active">Aktywne</button>
+              <button type="button" class="filter-btn" data-admin-crit-filter="archived">Wycofane (Archiwum)</button>
+            </div>
+            <input type="text" id="admin-crit-search" placeholder="Szukaj kryterium..." style="max-width:280px;">
+          </div>
+          <div class="table-wrap" id="admin-criteria-table"></div>
+        </div>
       </div>
     </section>
 

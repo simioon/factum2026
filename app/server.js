@@ -7,6 +7,8 @@ const { errorHandler } = require('./middleware/errorHandler');
 
 const healthRouter = require('./routes/health');
 const dictionariesRouter = require('./routes/dictionaries');
+const tagsRouter = require('./routes/tags');
+const criteriaRouter = require('./routes/criteria');
 const usersRouter = require('./routes/users');
 const evaluationsRouter = require('./routes/evaluations');
 const tasksRouter = require('./routes/tasks');
@@ -24,6 +26,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/api', healthRouter);
 app.use('/api', dictionariesRouter);
+app.use('/api', tagsRouter);
+app.use('/api', criteriaRouter);
 app.use('/api', usersRouter);
 app.use('/api', evaluationsRouter);
 app.use('/api', tasksRouter);

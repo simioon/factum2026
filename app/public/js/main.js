@@ -40,10 +40,14 @@ async function switchUserById(userId) {
     state.selectedEmployeeId = null;
     state.managerActiveTab = 'team';
     state.directorActiveTab = 'requests';
+    state.adminActiveTab = 'users';
+    state.editingTagId = null;
+    state.editingCriterionId = null;
     state.workspace = null;
     state.selfWorkspace = null;
     resetWizardState();
 
+    state.dictionaries = await api.getDictionaries();
     await loadAndRender();
     const u = getUserById(userId);
     if (u) showToast(`Przełączono na konto: ${u.imie_nazwisko} (${u.rola})`, 'success');
@@ -130,6 +134,14 @@ async function loadAndRender() {
         }
 
         if (user.rola === 'ADMIN') {
+            const [dictRes, tagsRes, critRes] = await Promise.all([
+                api.getDictionaries(),
+                api.getAdminTags(),
+                api.getAdminCriteria(),
+            ]);
+            state.dictionaries = dictRes;
+            state.adminTags = tagsRes.tags;
+            state.adminCriteria = critRes.criteria;
             document.getElementById('section-admin').classList.remove('hidden');
             renderAdminPanel(loadAndRender);
         }
@@ -173,6 +185,13 @@ function bindStaticNavigation() {
         });
     });
 
+    document.querySelectorAll('[data-admin-tab]').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+            state.adminActiveTab = btn.dataset.adminTab;
+            await loadAndRender();
+        });
+    });
+
     bindAdminEvents(loadAndRender);
 }
 
@@ -188,9 +207,12 @@ window.addEventListener('DOMContentLoaded', async () => {
                 btnReset.addEventListener('click', async () => {
                     resetMockDemoData();
                     state.selectedEmployeeId = null;
+                    state.editingTagId = null;
+                    state.editingCriterionId = null;
                     state.workspace = null;
                     state.selfWorkspace = null;
                     resetWizardState();
+                    await loadUsersAndDictionaries();
                     await loadAndRender();
                     showToast('Przywrócono początkowe dane demonstracyjne (tryb lokalny).', 'success');
                 });

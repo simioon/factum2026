@@ -74,6 +74,41 @@ export async function apiFetch(path, options = {}) {
 
 export const api = {
     getDictionaries: () => (useMockMode ? mockApi.getDictionaries() : apiFetch('/api/dictionaries')),
+    getAdminTags: () => (useMockMode ? mockApi.getAdminTags(state.currentUserId) : apiFetch('/api/tags')),
+    createTag: (payload) =>
+        useMockMode
+            ? mockApi.createTag(payload, state.currentUserId)
+            : apiFetch('/api/tags', { method: 'POST', body: JSON.stringify(payload) }),
+    updateTag: (tagId, payload) =>
+        useMockMode
+            ? mockApi.updateTag(tagId, payload, state.currentUserId)
+            : apiFetch(`/api/tags/${tagId}`, { method: 'PUT', body: JSON.stringify(payload) }),
+    deleteTag: (tagId) =>
+        useMockMode
+            ? mockApi.deleteTag(tagId, state.currentUserId)
+            : apiFetch(`/api/tags/${tagId}`, { method: 'DELETE' }),
+    restoreTag: (tagId) =>
+        useMockMode
+            ? mockApi.restoreTag(tagId, state.currentUserId)
+            : apiFetch(`/api/tags/${tagId}/restore`, { method: 'PATCH' }),
+    getAdminCriteria: () =>
+        useMockMode ? mockApi.getAdminCriteria(state.currentUserId) : apiFetch('/api/criteria'),
+    createCriterion: (payload) =>
+        useMockMode
+            ? mockApi.createCriterion(payload, state.currentUserId)
+            : apiFetch('/api/criteria', { method: 'POST', body: JSON.stringify(payload) }),
+    updateCriterion: (critId, payload) =>
+        useMockMode
+            ? mockApi.updateCriterion(critId, payload, state.currentUserId)
+            : apiFetch(`/api/criteria/${critId}`, { method: 'PUT', body: JSON.stringify(payload) }),
+    deleteCriterion: (critId) =>
+        useMockMode
+            ? mockApi.deleteCriterion(critId, state.currentUserId)
+            : apiFetch(`/api/criteria/${critId}`, { method: 'DELETE' }),
+    restoreCriterion: (critId) =>
+        useMockMode
+            ? mockApi.restoreCriterion(critId, state.currentUserId)
+            : apiFetch(`/api/criteria/${critId}/restore`, { method: 'PATCH' }),
     getUsers: () => (useMockMode ? mockApi.getUsers() : apiFetch('/api/users')),
     getWorkspace: (userId) =>
         useMockMode ? mockApi.getWorkspace(userId, state.currentUserId) : apiFetch(`/api/users/${userId}/workspace`),

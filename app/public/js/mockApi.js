@@ -829,6 +829,8 @@ function buildInitialMockDb() {
         },
     ];
 
+    const initialCatalogs = buildInitialCatalogTables();
+
     return {
         seq: {
             users: 6,
@@ -839,7 +841,12 @@ function buildInitialMockDb() {
             hrEvents: 1,
             appeals: 1,
             rankRequests: 2,
+            criteria: CRITERIA_CATALOG.length + 1,
+            tags: TAGS_CATALOG.length + 1,
         },
+        criteria: initialCatalogs.criteria,
+        sheetCriteria: initialCatalogs.sheetCriteria,
+        tags: initialCatalogs.tags,
         users,
         evaluations,
         criteriaResults,
@@ -851,6 +858,125 @@ function buildInitialMockDb() {
     };
 }
 
+function buildInitialCatalogTables() {
+    const criteria = CRITERIA_CATALOG.map((c) => ({
+        id: c.id,
+        nazwa: c.nazwa,
+        opis: c.opis,
+        descriptions: [...c.descriptions],
+        czy_aktywne: true,
+    }));
+    const sheetCriteria = [];
+    for (const sheet of ['A', 'B', 'C']) {
+        const mandSet = new Set(SHEET_MANDATORY[sheet]);
+        for (const c of CRITERIA_CATALOG) {
+            sheetCriteria.push({
+                kod_arkusza: sheet,
+                kryterium_id: c.id,
+                typ_kryterium: mandSet.has(c.id) ? 'OBOWIAZKOWE' : 'DODATKOWE',
+            });
+        }
+    }
+    const tags = TAGS_CATALOG.map((t) => ({
+        id: t.id,
+        nazwa: t.nazwa,
+        opis: t.opis,
+        kategoria: t.kategoria,
+        criteriaIds: [...t.criteriaIds],
+        czy_aktywny: true,
+    }));
+    return { criteria, sheetCriteria, tags };
+}
+
+function ensureCatalogTables(db) {
+    let mutated = false;
+    if (!db.seq) {
+        db.seq = {};
+        mutated = true;
+    }
+    if (!Array.isArray(db.criteria) || !Array.isArray(db.sheetCriteria) || !Array.isArray(db.tags)) {
+        const defaults = buildInitialCatalogTables();
+        if (!Array.isArray(db.criteria)) {
+            db.criteria = defaults.criteria;
+            mutated = true;
+        }
+        if (!Array.isArray(db.sheetCriteria)) {
+            db.sheetCriteria = defaults.sheetCriteria;
+            mutated = true;
+        }
+        if (!Array.isArray(db.tags)) {
+            db.tags = defaults.tags;
+            mutated = true;
+        }
+    }
+    if (!Number.isInteger(db.seq.criteria)) {
+        db.seq.criteria = db.criteria.reduce((m, c) => Math.max(m, c.id), 0) + 1;
+        mutated = true;
+    }
+    if (!Number.isInteger(db.seq.tags)) {
+        db.seq.tags = db.tags.reduce((m, t) => Math.max(m, t.id), 0) + 1;
+        mutated = true;
+    }
+    if (mutated) saveDb(db);
+    return db;
+}
+
+function buildActiveSheetCriteriaMap(db) {
+    const activeCritIds = new Set(db.criteria.filter((c) => c.czy_aktywne).map((c) => c.id));
+    const map = {
+        A: { mandatoryIds: [], additionalIds: [] },
+        B: { mandatoryIds: [], additionalIds: [] },
+        C: { mandatoryIds: [], additionalIds: [] },
+    };
+    for (const row of db.sheetCriteria) {
+        if (!activeCritIds.has(row.kryterium_id)) continue;
+        const bucket = map[row.kod_arkusza];
+        if (!bucket) continue;
+        if (row.typ_kryterium === 'OBOWIAZKOWE') bucket.mandatoryIds.push(row.kryterium_id);
+        else bucket.additionalIds.push(row.kryterium_id);
+    }
+    return map;
+}
+
+function formatMockTag(db, tag) {
+    const usageCount = db.taskTags.filter((tt) => tt.tag_id === tag.id).length;
+    return {
+        id: tag.id,
+        nazwa: tag.nazwa,
+        kategoria: tag.kategoria,
+        opis: tag.opis || null,
+        czy_aktywny: Boolean(tag.czy_aktywny),
+        isWellbeing: tag.kategoria === 'DOBROSTAN',
+        label: tag.opis ? `${tag.nazwa} (${tag.opis})` : tag.nazwa,
+        criteriaIds: [...(tag.criteriaIds || [])],
+        usageCount,
+    };
+}
+
+function formatMockCriterion(db, crit) {
+    const sheets = { A: null, B: null, C: null };
+    for (const row of db.sheetCriteria) {
+        if (row.kryterium_id === crit.id) {
+            sheets[row.kod_arkusza] = row.typ_kryterium;
+        }
+    }
+    const tagCount = db.tags.filter(
+        (t) => t.czy_aktywny && Array.isArray(t.criteriaIds) && t.criteriaIds.includes(crit.id)
+    ).length;
+    const usageCount = db.criteriaResults.filter((cr) => cr.kryterium_id === crit.id).length;
+    const descriptions = crit.opis ? crit.opis.split('\n').filter(Boolean) : [];
+    return {
+        id: crit.id,
+        nazwa: crit.nazwa,
+        opis: crit.opis,
+        descriptions,
+        czy_aktywne: Boolean(crit.czy_aktywne),
+        sheets,
+        tagCount,
+        usageCount,
+    };
+}
+
 let memoryDb = null;
 
 function loadDb() {
@@ -858,7 +984,7 @@ function loadDb() {
         try {
             const raw = localStorage.getItem(MOCK_STORAGE_KEY);
             if (raw) {
-                memoryDb = JSON.parse(raw);
+                memoryDb = ensureCatalogTables(JSON.parse(raw));
                 return memoryDb;
             }
         } catch {
@@ -869,7 +995,7 @@ function loadDb() {
         memoryDb = buildInitialMockDb();
         saveDb(memoryDb);
     }
-    return memoryDb;
+    return ensureCatalogTables(memoryDb);
 }
 
 function saveDb(db) {
@@ -920,13 +1046,14 @@ function hydrateTask(db, task) {
     const tags = db.taskTags
         .filter((tt) => tt.zadanie_id === task.id)
         .map((tt) => {
-            const def = TAGS_CATALOG.find((t) => t.id === tt.tag_id);
+            const def = db.tags.find((t) => t.id === tt.tag_id);
             return {
                 ...tt,
                 tag_nazwa: def ? def.nazwa : '',
                 kategoria: def ? def.kategoria : 'KOMPETENCYJNY',
                 tag_opis: def ? def.opis : '',
-                kryteria_ids: def ? [...def.criteriaIds] : [],
+                tag_czy_aktywny: def ? Boolean(def.czy_aktywny) : true,
+                kryteria_ids: def ? [...(def.criteriaIds || [])] : [],
             };
         });
     return {
@@ -938,17 +1065,22 @@ function hydrateTask(db, task) {
 
 function hydrateEvaluation(db, evalRow, { includePrivateTasks = true } = {}) {
     if (!evalRow) return null;
-    const mandatorySet = new Set(SHEET_MANDATORY[evalRow.typ_arkusza] || []);
+    const sheetTypeByCrit = new Map(
+        db.sheetCriteria
+            .filter((sc) => sc.kod_arkusza === evalRow.typ_arkusza)
+            .map((sc) => [sc.kryterium_id, sc.typ_kryterium])
+    );
     const criteria = db.criteriaResults
         .filter((cr) => cr.ocena_id === evalRow.id)
         .map((cr) => {
-            const def = CRITERIA_CATALOG.find((c) => c.id === cr.kryterium_id);
+            const def = db.criteria.find((c) => c.id === cr.kryterium_id);
             return {
                 ...cr,
                 nazwa: def ? def.nazwa : `#${cr.kryterium_id}`,
                 opis: def ? def.opis : '',
-                descriptions: def ? [...def.descriptions] : [],
-                typ_kryterium: mandatorySet.has(cr.kryterium_id) ? 'OBOWIAZKOWE' : 'DODATKOWE',
+                descriptions: def && def.opis ? def.opis.split('\n').filter(Boolean) : [],
+                kryterium_czy_aktywne: def ? Boolean(def.czy_aktywne) : true,
+                typ_kryterium: sheetTypeByCrit.get(cr.kryterium_id) || 'DODATKOWE',
             };
         })
         .sort((a, b) => {
@@ -1035,7 +1167,7 @@ function createActiveCycleInDb(
     const critIds =
         Array.isArray(criteriaIdsOverride) && criteriaIdsOverride.length > 0
             ? criteriaIdsOverride
-            : SHEET_CRITERIA[typArkusza].mandatoryIds;
+            : buildActiveSheetCriteriaMap(db)[typArkusza].mandatoryIds;
 
     for (const cid of critIds) {
         db.criteriaResults.push({
@@ -1066,7 +1198,7 @@ function assertCanEvaluate(currentUser, evalRow) {
     }
 }
 
-function prepareBatchTaskTags(rawTags, batchComment = '') {
+function prepareBatchTaskTags(db, rawTags, batchComment = '') {
     if (!Array.isArray(rawTags) || rawTags.length === 0) {
         throw createError(400, 'Wybierz przynajmniej jeden tag do przypisania.');
     }
@@ -1078,11 +1210,17 @@ function prepareBatchTaskTags(rawTags, batchComment = '') {
             throw createError(400, 'Nieprawidłowy element na liście tagów.');
         }
         const tagDef = item.tag_id
-            ? TAGS_CATALOG.find((t) => t.id === Number(item.tag_id))
+            ? db.tags.find((t) => t.id === Number(item.tag_id))
             : item.tag_nazwa
-              ? TAGS_CATALOG.find((t) => t.nazwa === String(item.tag_nazwa))
+              ? db.tags.find((t) => t.nazwa === String(item.tag_nazwa))
               : null;
         if (!tagDef) throw createError(400, 'Wybrany tag nie istnieje w słowniku.');
+        if (!tagDef.czy_aktywny) {
+            throw createError(
+                400,
+                `Tag „${tagDef.nazwa}” został wycofany (nieaktywny) i nie może być przypisywany do nowych zadań.`
+            );
+        }
 
         let normPol =
             item.polaryzacja === '+' || item.polaryzacja === 'pos'
@@ -1126,17 +1264,176 @@ function insertPreparedTaskTags(db, taskId, preparedTags) {
             tag_nazwa: entry.tagDef.nazwa,
             kategoria: entry.tagDef.kategoria,
             tag_opis: entry.tagDef.opis,
+            tag_czy_aktywny: Boolean(entry.tagDef.czy_aktywny),
         });
     }
     return inserted;
 }
 
+function assertAdminOrThrow(db, currentUserId) {
+    const currentUser = getCurrentUserOrThrow(db, currentUserId);
+    if (currentUser.rola !== 'ADMIN') {
+        throw createError(403, 'Brak uprawnień do wykonania tej operacji (wymagana rola: ADMIN).');
+    }
+    return currentUser;
+}
+
+function validateMockTagPayload(db, payload, { excludeTagId = null } = {}) {
+    const { nazwa, kategoria = 'KOMPETENCYJNY', opis = '', criteriaIds = [] } = payload || {};
+    const trimmedName = String(nazwa || '').trim();
+    if (!trimmedName) throw createError(400, 'Nazwa tagu jest wymagana.');
+    if (trimmedName.length > 60) throw createError(400, 'Nazwa tagu może mieć maksymalnie 60 znaków.');
+    if (!['KOMPETENCYJNY', 'DOBROSTAN'].includes(kategoria)) {
+        throw createError(400, 'Nieprawidłowa kategoria tagu (dozwolone: KOMPETENCYJNY, DOBROSTAN).');
+    }
+
+    const dup = db.tags.find(
+        (t) => t.nazwa.toLowerCase() === trimmedName.toLowerCase() && (excludeTagId === null || t.id !== excludeTagId)
+    );
+    if (dup) {
+        if (dup.czy_aktywny) {
+            throw createError(409, 'Tag o tej nazwie już istnieje w słowniku.');
+        }
+        throw createError(
+            409,
+            'Istnieje już wycofany tag o tej nazwie — przywróć go z archiwum lub zmień jego nazwę.'
+        );
+    }
+
+    let normalizedCriteriaIds = [];
+    if (kategoria === 'KOMPETENCYJNY') {
+        if (!Array.isArray(criteriaIds)) {
+            throw createError(400, 'Pole criteriaIds musi być tablicą identyfikatorów kryteriów.');
+        }
+        const uniqueIds = [...new Set(criteriaIds.map((x) => Number(x)))];
+        if (uniqueIds.some((x) => !Number.isInteger(x) || x <= 0)) {
+            throw createError(400, 'Nieprawidłowe ID kryterium na liście powiązań.');
+        }
+        if (uniqueIds.length === 0) {
+            throw createError(400, 'Tag kompetencyjny musi być przypisany do co najmniej jednego kryterium oceny.');
+        }
+        const activeCritSet = new Set(db.criteria.filter((c) => c.czy_aktywne).map((c) => c.id));
+        for (const cid of uniqueIds) {
+            if (!activeCritSet.has(cid)) {
+                throw createError(
+                    400,
+                    `Kryterium ID ${cid} nie istnieje lub zostało wycofane z aktywnego słownika.`
+                );
+            }
+        }
+        normalizedCriteriaIds = uniqueIds.sort((a, b) => a - b);
+    }
+
+    return {
+        nazwa: trimmedName,
+        kategoria,
+        opis: String(opis || '').trim() || null,
+        criteriaIds: normalizedCriteriaIds,
+    };
+}
+
+function validateMockCriterionPayload(db, payload, { excludeCritId = null } = {}) {
+    const { nazwa, opis, sheets } = payload || {};
+    const trimmedName = String(nazwa || '').trim();
+    if (!trimmedName) throw createError(400, 'Nazwa kryterium oceny jest wymagana.');
+    if (trimmedName.length > 150) throw createError(400, 'Nazwa kryterium może mieć maksymalnie 150 znaków.');
+
+    const trimmedDesc = String(opis || '').trim();
+    if (!trimmedDesc) throw createError(400, 'Opis kryterium (wskaźniki zachowań) jest wymagany.');
+
+    const dup = db.criteria.find(
+        (c) => c.nazwa.toLowerCase() === trimmedName.toLowerCase() && (excludeCritId === null || c.id !== excludeCritId)
+    );
+    if (dup) {
+        if (dup.czy_aktywne) {
+            throw createError(409, 'Kryterium o tej nazwie już istnieje w słowniku.');
+        }
+        throw createError(
+            409,
+            'Istnieje już wycofane kryterium o tej nazwie — przywróć je z archiwum lub zmień jego nazwę.'
+        );
+    }
+
+    if (!sheets || typeof sheets !== 'object' || Array.isArray(sheets)) {
+        throw createError(400, 'Wymagane jest określenie przypisania kryterium do arkuszy (A, B, C).');
+    }
+
+    const normalizedSheets = { A: null, B: null, C: null };
+    let assignedCount = 0;
+    for (const code of ['A', 'B', 'C']) {
+        const raw = sheets[code];
+        if (raw === null || raw === undefined || raw === '' || raw === 'BRAK') {
+            normalizedSheets[code] = null;
+        } else if (raw === 'OBOWIAZKOWE' || raw === 'DODATKOWE') {
+            normalizedSheets[code] = raw;
+            assignedCount++;
+        } else {
+            throw createError(
+                400,
+                `Nieprawidłowy typ kryterium dla Arkusza ${code} (dozwolone: OBOWIAZKOWE, DODATKOWE lub brak).`
+            );
+        }
+    }
+    if (assignedCount === 0) {
+        throw createError(400, 'Kryterium musi być przypisane do co najmniej jednego arkusza (A, B lub C).');
+    }
+
+    return { nazwa: trimmedName, opis: trimmedDesc, sheets: normalizedSheets };
+}
+
+function assertMockSheetsRetainMandatory(db, { critId, nextActive, nextSheets }) {
+    const activeOtherIds = new Set(
+        db.criteria.filter((c) => c.czy_aktywne && c.id !== critId).map((c) => c.id)
+    );
+    for (const code of ['A', 'B', 'C']) {
+        const otherMandatoryCount = db.sheetCriteria.filter(
+            (sc) =>
+                sc.kod_arkusza === code &&
+                sc.typ_kryterium === 'OBOWIAZKOWE' &&
+                activeOtherIds.has(sc.kryterium_id)
+        ).length;
+        const thisIsActiveMandatory = Boolean(nextActive && nextSheets[code] === 'OBOWIAZKOWE');
+        if (otherMandatoryCount === 0 && !thisIsActiveMandatory) {
+            throw createError(
+                400,
+                `Nie można wykonać tej operacji: Arkusz ${code} musi posiadać co najmniej jedno aktywne kryterium obowiązkowe.`
+            );
+        }
+    }
+}
+
 export const mockApi = {
     async getDictionaries() {
+        const db = loadDb();
+        const criteria = db.criteria
+            .filter((c) => c.czy_aktywne)
+            .sort((a, b) => a.id - b.id)
+            .map((c) => ({
+                id: c.id,
+                nazwa: c.nazwa,
+                opis: c.opis,
+                descriptions: c.opis ? c.opis.split('\n').filter(Boolean) : [],
+                czy_aktywne: true,
+            }));
+        const sheetCriteria = buildActiveSheetCriteriaMap(db);
+        const tags = db.tags
+            .filter((t) => t.czy_aktywny)
+            .sort((a, b) => a.id - b.id)
+            .map((t) => ({
+                id: t.id,
+                nazwa: t.nazwa,
+                kategoria: t.kategoria,
+                opis: t.opis || null,
+                czy_aktywny: true,
+                isWellbeing: t.kategoria === 'DOBROSTAN',
+                label: t.opis ? `${t.nazwa} (${t.opis})` : t.nazwa,
+                criteriaIds: [...(t.criteriaIds || [])],
+            }));
+
         return {
-            criteria: CRITERIA_CATALOG,
-            sheetCriteria: SHEET_CRITERIA,
-            tags: TAGS_CATALOG,
+            criteria,
+            sheetCriteria,
+            tags,
             legalConfig: LEGAL_CONFIG,
             scoreScale: SCORE_SCALE,
             levelLabels: LEVEL_LABELS,
@@ -1146,6 +1443,178 @@ export const mockApi = {
             eventTypeLabels: EVENT_TYPE_LABELS,
             iprzSuggestions: IPRZ_SUGGESTIONS_BY_CRITERION,
         };
+    },
+
+    async getAdminTags(currentUserId) {
+        const db = loadDb();
+        assertAdminOrThrow(db, currentUserId);
+        const tags = [...db.tags]
+            .sort((a, b) => {
+                if (a.czy_aktywny !== b.czy_aktywny) return a.czy_aktywny ? -1 : 1;
+                return a.id - b.id;
+            })
+            .map((t) => formatMockTag(db, t));
+        return { tags };
+    },
+
+    async createTag(payload, currentUserId) {
+        const db = loadDb();
+        assertAdminOrThrow(db, currentUserId);
+        const valid = validateMockTagPayload(db, payload);
+        const row = {
+            id: db.seq.tags++,
+            nazwa: valid.nazwa,
+            kategoria: valid.kategoria,
+            opis: valid.opis,
+            criteriaIds: valid.criteriaIds,
+            czy_aktywny: true,
+        };
+        db.tags.push(row);
+        saveDb(db);
+        return { tag: formatMockTag(db, row) };
+    },
+
+    async updateTag(tagId, payload, currentUserId) {
+        const db = loadDb();
+        assertAdminOrThrow(db, currentUserId);
+        const id = Number(tagId);
+        const row = db.tags.find((t) => t.id === id);
+        if (!row) throw createError(404, 'Tag nie istnieje w słowniku.');
+        const valid = validateMockTagPayload(db, payload, { excludeTagId: id });
+        row.nazwa = valid.nazwa;
+        row.kategoria = valid.kategoria;
+        row.opis = valid.opis;
+        row.criteriaIds = valid.criteriaIds;
+        if (payload && Object.prototype.hasOwnProperty.call(payload, 'czy_aktywny') && typeof payload.czy_aktywny === 'boolean') {
+            row.czy_aktywny = payload.czy_aktywny;
+        }
+        saveDb(db);
+        return { tag: formatMockTag(db, row) };
+    },
+
+    async deleteTag(tagId, currentUserId) {
+        const db = loadDb();
+        assertAdminOrThrow(db, currentUserId);
+        const id = Number(tagId);
+        const row = db.tags.find((t) => t.id === id);
+        if (!row) throw createError(404, 'Tag nie istnieje w słowniku.');
+        row.czy_aktywny = false;
+        saveDb(db);
+        return { archived: true, tag: formatMockTag(db, row) };
+    },
+
+    async restoreTag(tagId, currentUserId) {
+        const db = loadDb();
+        assertAdminOrThrow(db, currentUserId);
+        const id = Number(tagId);
+        const row = db.tags.find((t) => t.id === id);
+        if (!row) throw createError(404, 'Tag nie istnieje w słowniku.');
+        row.czy_aktywny = true;
+        saveDb(db);
+        return { restored: true, tag: formatMockTag(db, row) };
+    },
+
+    async getAdminCriteria(currentUserId) {
+        const db = loadDb();
+        assertAdminOrThrow(db, currentUserId);
+        const criteria = [...db.criteria]
+            .sort((a, b) => {
+                if (a.czy_aktywne !== b.czy_aktywne) return a.czy_aktywne ? -1 : 1;
+                return a.id - b.id;
+            })
+            .map((c) => formatMockCriterion(db, c));
+        return { criteria };
+    },
+
+    async createCriterion(payload, currentUserId) {
+        const db = loadDb();
+        assertAdminOrThrow(db, currentUserId);
+        const valid = validateMockCriterionPayload(db, payload);
+        const row = {
+            id: db.seq.criteria++,
+            nazwa: valid.nazwa,
+            opis: valid.opis,
+            descriptions: valid.opis.split('\n').filter(Boolean),
+            czy_aktywne: true,
+        };
+        db.criteria.push(row);
+        for (const code of ['A', 'B', 'C']) {
+            if (valid.sheets[code]) {
+                db.sheetCriteria.push({
+                    kod_arkusza: code,
+                    kryterium_id: row.id,
+                    typ_kryterium: valid.sheets[code],
+                });
+            }
+        }
+        saveDb(db);
+        return { criterion: formatMockCriterion(db, row) };
+    },
+
+    async updateCriterion(critId, payload, currentUserId) {
+        const db = loadDb();
+        assertAdminOrThrow(db, currentUserId);
+        const id = Number(critId);
+        const row = db.criteria.find((c) => c.id === id);
+        if (!row) throw createError(404, 'Kryterium oceny nie istnieje.');
+        const valid = validateMockCriterionPayload(db, payload, { excludeCritId: id });
+        const nextActive =
+            payload && Object.prototype.hasOwnProperty.call(payload, 'czy_aktywne') && typeof payload.czy_aktywne === 'boolean'
+                ? payload.czy_aktywne
+                : row.czy_aktywne;
+
+        assertMockSheetsRetainMandatory(db, {
+            critId: id,
+            nextActive,
+            nextSheets: valid.sheets,
+        });
+
+        row.nazwa = valid.nazwa;
+        row.opis = valid.opis;
+        row.descriptions = valid.opis.split('\n').filter(Boolean);
+        row.czy_aktywne = nextActive;
+
+        db.sheetCriteria = db.sheetCriteria.filter((sc) => sc.kryterium_id !== id);
+        for (const code of ['A', 'B', 'C']) {
+            if (valid.sheets[code]) {
+                db.sheetCriteria.push({
+                    kod_arkusza: code,
+                    kryterium_id: id,
+                    typ_kryterium: valid.sheets[code],
+                });
+            }
+        }
+        saveDb(db);
+        return { criterion: formatMockCriterion(db, row) };
+    },
+
+    async deleteCriterion(critId, currentUserId) {
+        const db = loadDb();
+        assertAdminOrThrow(db, currentUserId);
+        const id = Number(critId);
+        const row = db.criteria.find((c) => c.id === id);
+        if (!row) throw createError(404, 'Kryterium oceny nie istnieje.');
+
+        assertMockSheetsRetainMandatory(db, {
+            critId: id,
+            nextActive: false,
+            nextSheets: { A: null, B: null, C: null },
+        });
+
+        row.czy_aktywne = false;
+        saveDb(db);
+        return { archived: true, criterion: formatMockCriterion(db, row) };
+    },
+
+    async restoreCriterion(critId, currentUserId) {
+        const db = loadDb();
+        assertAdminOrThrow(db, currentUserId);
+        const id = Number(critId);
+        const row = db.criteria.find((c) => c.id === id);
+        if (!row) throw createError(404, 'Kryterium oceny nie istnieje.');
+        row.czy_aktywne = true;
+        saveDb(db);
+        return { restored: true, criterion: formatMockCriterion(db, row) };
     },
 
     async getUsers() {
@@ -1529,7 +1998,7 @@ export const mockApi = {
             throw createError(400, 'Możesz wybrać maksymalnie 3 kryteria dodatkowe.');
         }
 
-        const sheetCfg = SHEET_CRITERIA[ev.typ_arkusza];
+        const sheetCfg = buildActiveSheetCriteriaMap(db)[ev.typ_arkusza];
         for (const addId of uniqueAdditional) {
             if (!sheetCfg.additionalIds.includes(addId)) {
                 throw createError(400, `Kryterium ${addId} nie jest dozwolonym kryterium dodatkowym dla Arkusza ${ev.typ_arkusza}.`);
@@ -1778,7 +2247,7 @@ export const mockApi = {
         }
 
         // Pre-validate batch tags atomically before mutating db
-        const preparedTags = Array.isArray(tags) && tags.length > 0 ? prepareBatchTaskTags(tags, komentarz) : [];
+        const preparedTags = Array.isArray(tags) && tags.length > 0 ? prepareBatchTaskTags(db, tags, komentarz) : [];
 
         const newTask = {
             id: db.seq.tasks++,
@@ -1832,7 +2301,7 @@ export const mockApi = {
                   },
               ];
 
-        const prepared = prepareBatchTaskTags(rawTags, body.komentarz || '');
+        const prepared = prepareBatchTaskTags(db, rawTags, body.komentarz || '');
         const taskTags = insertPreparedTaskTags(db, task.id, prepared);
         saveDb(db);
         return { taskTags, taskTag: taskTags[0] };

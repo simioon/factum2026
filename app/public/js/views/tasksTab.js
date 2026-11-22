@@ -201,11 +201,15 @@ export function renderTasksTab(workspace, onRefresh) {
                                               ? 'var(--positive)'
                                               : 'var(--negative)';
                                         const prefix = isWell ? '[HR] ' : isPos ? '(+) ' : '(-) ';
+                                        const archivedBadge =
+                                            tg.tag_czy_aktywny === false
+                                                ? ' <span class="badge badge-archived">archiwalny</span>'
+                                                : '';
 
                                         return `
                                             <div class="tag-row ${rowClass}">
                                                 <div class="tag-row-content">
-                                                    <strong style="color:${colorVar};">${prefix}${escapeHtml(tg.tag_nazwa)}</strong>
+                                                    <strong style="color:${colorVar};">${prefix}${escapeHtml(tg.tag_nazwa)}</strong>${archivedBadge}
                                                     <span>${escapeHtml(tg.komentarz || 'Brak dodatkowego komentarza')}</span>
                                                 </div>
                                                 <button type="button" class="btn btn-xs" data-delete-task-tag="${tg.id}" data-task-id="${t.id}">Usuń tag</button>

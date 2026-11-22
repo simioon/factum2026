@@ -62,6 +62,12 @@ async function insertBatchTaskTags(client, taskId, rawTags, batchComment = '') {
         if (!tagRow) {
             throw new HttpError(400, 'Wybrany tag nie istnieje w słowniku.');
         }
+        if (!tagRow.czy_aktywny) {
+            throw new HttpError(
+                400,
+                `Tag „${tagRow.nazwa}” został wycofany (nieaktywny) i nie może być przypisywany do nowych zadań.`
+            );
+        }
 
         let normalizedPol = null;
         if (item.polaryzacja === '+' || item.polaryzacja === 'pos') normalizedPol = '+';
@@ -99,6 +105,7 @@ async function insertBatchTaskTags(client, taskId, rawTags, batchComment = '') {
             tag_nazwa: entry.tagRow.nazwa,
             kategoria: entry.tagRow.kategoria,
             tag_opis: entry.tagRow.opis,
+            tag_czy_aktywny: Boolean(entry.tagRow.czy_aktywny),
         });
     }
 
@@ -132,7 +139,7 @@ router.get(
         const tagsByTaskId = new Map();
         if (taskIds.length > 0) {
             const tagsRes = await query(
-                `SELECT zt.*, st.nazwa AS tag_nazwa, st.kategoria, st.opis AS tag_opis
+                `SELECT zt.*, st.nazwa AS tag_nazwa, st.kategoria, st.opis AS tag_opis, st.czy_aktywny AS tag_czy_aktywny
                  FROM zadanie_tagi zt
                  JOIN slownik_tagow st ON st.id = zt.tag_id
                  WHERE zt.zadanie_id = ANY($1::int[])
