@@ -20,6 +20,7 @@ export const state = {
     currentUserId: loadStoredUserId(),
     managerActiveTab: 'team',
     directorActiveTab: 'requests',
+    adminActiveTab: 'users',
     selectedEmployeeId: null,
     profileActiveTab: 'setup',
 
@@ -28,6 +29,16 @@ export const state = {
     managerHistory: [],
     appeals: [],
     rankRequests: [],
+
+    adminTags: [],
+    adminTagFilter: 'all',
+    adminTagSearch: '',
+    editingTagId: null,
+
+    adminCriteria: [],
+    adminCriteriaFilter: 'all',
+    adminCriteriaSearch: '',
+    editingCriterionId: null,
 
     wizard: createInitialWizardState(),
 };

@@ -161,6 +161,7 @@ export function renderWizardTab(workspace, onFinalized) {
                         <span class="badge ${isMandatory ? 'badge-primary' : 'badge-warning'}" style="margin-bottom:6px;">
                             ${isMandatory ? 'Kryterium obowiązkowe' : 'Kryterium dodatkowe'}
                         </span>
+                        ${item.kryterium_czy_aktywne === false ? '<span class="badge badge-archived" style="margin-bottom:6px; margin-left:6px;">Archiwalne</span>' : ''}
                         <h2>${currentStep + 1}. ${escapeHtml(item.nazwa)}</h2>
                     </div>
                 </div>

@@ -46,7 +46,11 @@ export function renderEmployeePanel(workspace, targetElementId, onRefresh) {
                         c.typ_kryterium === 'OBOWIAZKOWE'
                             ? '<span class="badge badge-primary">Obowiązkowe</span>'
                             : '<span class="badge badge-warning">Dodatkowe</span>';
-                    return `<li style="margin-bottom:6px;"><strong>${escapeHtml(c.nazwa)}</strong> ${typeBadge}</li>`;
+                    const archivedBadge =
+                        c.kryterium_czy_aktywne === false
+                            ? ' <span class="badge badge-archived">archiwalne</span>'
+                            : '';
+                    return `<li style="margin-bottom:6px;"><strong>${escapeHtml(c.nazwa)}</strong> ${typeBadge}${archivedBadge}</li>`;
                 })
                 .join('')
             : '<li class="text-muted">Brak aktywnego cyklu oceny.</li>';
@@ -114,7 +118,8 @@ export function renderEmployeePanel(workspace, targetElementId, onRefresh) {
                         const isWell = tg.kategoria === 'DOBROSTAN';
                         const cls = isWell ? 'badge-wellbeing' : tg.polaryzacja === '+' ? 'badge-positive' : 'badge-negative';
                         const sign = isWell ? '[HR] ' : `(${tg.polaryzacja}) `;
-                        return `<span class="badge ${cls}">${sign}${escapeHtml(tg.tag_nazwa)}</span>`;
+                        const arch = tg.tag_czy_aktywny === false ? ' [archiwalny]' : '';
+                        return `<span class="badge ${cls}">${sign}${escapeHtml(tg.tag_nazwa)}${arch}</span>`;
                     })
                     .join(' ');
                 return `

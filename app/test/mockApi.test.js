@@ -265,10 +265,156 @@ test('Offline mockApi reproduces full evaluation, HR event, visibility, appeal, 
         );
         const dec = await mockApi.decideRankRequest(pending.id, { status_decyzji: 'ZATWIERDZONY' }, marek.id);
         assert.equal(dec.newRank, 5);
+    });
+
+    await t.test('11. Admin criteria management: CRUD, sheet rules, non-destructive archive & restore', async () => {
+        await assert.rejects(() => mockApi.getAdminCriteria(jan.id), (err) => err.status === 403);
+        await assert.rejects(
+            () =>
+                mockApi.createCriterion(
+                    { nazwa: 'Bez arkuszy', opis: 'Opis', sheets: { A: null, B: null, C: null } },
+                    admin.id
+                ),
+            (err) => err.status === 400
+        );
+
+        const created = await mockApi.createCriterion(
+            {
+                nazwa: 'Cyberbezpieczeństwo i ochrona danych',
+                opis: 'Przestrzeganie zasad RODO.\nZgłaszanie incydentów.',
+                sheets: { A: 'DODATKOWE', B: 'DODATKOWE', C: 'DODATKOWE' },
+            },
+            admin.id
+        );
+        const critId = created.criterion.id;
+
+        const dict1 = await mockApi.getDictionaries();
+        assert.ok(dict1.sheetCriteria.B.additionalIds.includes(critId));
+
+        const janWs = await mockApi.getWorkspace(jan.id, marek.id);
+        await mockApi.saveSetup(
+            janWs.activeEvaluation.id,
+            {
+                data_rozmowy_wstepnej: '2026-01-25',
+                oczekiwania_i_cele: 'Cyberbezpieczeństwo.',
+                additionalCriteriaIds: [critId],
+                signByEvaluator: false,
+            },
+            marek.id
+        );
+
+        const edited = await mockApi.updateCriterion(
+            critId,
+            {
+                nazwa: 'Cyberbezpieczeństwo i RODO',
+                opis: 'Polityka bezpieczeństwa.\nOchrona danych.',
+                sheets: { A: null, B: 'DODATKOWE', C: 'DODATKOWE' },
+            },
+            admin.id
+        );
+        assert.equal(edited.criterion.sheets.A, null);
+
+        const archived = await mockApi.deleteCriterion(critId, admin.id);
+        assert.equal(archived.archived, true);
+        assert.equal(archived.criterion.czy_aktywne, false);
+        assert.ok(archived.criterion.usageCount >= 1);
+
+        const dictAfter = await mockApi.getDictionaries();
+        assert.equal(dictAfter.criteria.some((c) => c.id === critId), false);
+
+        const janWsAfter = await mockApi.getWorkspace(jan.id, marek.id);
+        const preserved = janWsAfter.activeEvaluation.criteria.find((c) => c.kryterium_id === critId);
+        assert.ok(preserved);
+        assert.equal(preserved.kryterium_czy_aktywne, false);
+
+        const restored = await mockApi.restoreCriterion(critId, admin.id);
+        assert.equal(restored.criterion.czy_aktywne, true);
+    });
+
+    await t.test('12. Admin tag management: create with criteria, full edit, non-destructive delete, restore & resetMockDb', async () => {
+        await assert.rejects(() => mockApi.getAdminTags(jan.id), (err) => err.status === 403);
+        await assert.rejects(
+            () => mockApi.createTag({ nazwa: 'Pusty Tag', kategoria: 'KOMPETENCYJNY', criteriaIds: [] }, admin.id),
+            (err) => err.status === 400
+        );
+
+        const wellTag = await mockApi.createTag(
+            { nazwa: 'Wypalenie Testowe', kategoria: 'DOBROSTAN', opis: 'HR', criteriaIds: [1] },
+            admin.id
+        );
+        assert.deepEqual(wellTag.tag.criteriaIds, []);
+
+        const allCrit = await mockApi.getAdminCriteria(admin.id);
+        const cyberCrit = allCrit.criteria.find((c) => c.nazwa === 'Cyberbezpieczeństwo i RODO');
+
+        const created = await mockApi.createTag(
+            {
+                nazwa: 'Higiena Cyfrowa',
+                kategoria: 'KOMPETENCYJNY',
+                opis: 'RODO',
+                criteriaIds: [1, cyberCrit.id],
+            },
+            admin.id
+        );
+        const tagId = created.tag.id;
+        assert.deepEqual(created.tag.criteriaIds, [1, cyberCrit.id]);
+
+        const janWs = await mockApi.getWorkspace(jan.id, marek.id);
+        const taskRes = await mockApi.createTask(
+            janWs.activeEvaluation.id,
+            {
+                tytul: 'Audyt RODO',
+                tags: [{ tag_id: tagId, polaryzacja: '+' }],
+                komentarz: 'Wzorowe wdrożenie.',
+            },
+            marek.id
+        );
+        const taskId = taskRes.task.id;
+
+        const edited = await mockApi.updateTag(
+            tagId,
+            {
+                nazwa: 'Bezpieczeństwo Danych',
+                kategoria: 'KOMPETENCYJNY',
+                opis: 'RODO i IT',
+                criteriaIds: [4, cyberCrit.id],
+            },
+            admin.id
+        );
+        assert.equal(edited.tag.nazwa, 'Bezpieczeństwo Danych');
+
+        const wsEdit = await mockApi.getWorkspace(jan.id, marek.id);
+        assert.equal(wsEdit.activeEvaluation.tasks.find((x) => x.id === taskId).tags[0].tag_nazwa, 'Bezpieczeństwo Danych');
+        assert.ok(wsEdit.tagSummariesByCriterion[4].entries.some((e) => e.tagId === 'Bezpieczeństwo Danych'));
+
+        const archived = await mockApi.deleteTag(tagId, admin.id);
+        assert.equal(archived.archived, true);
+        assert.equal(archived.tag.usageCount, 1);
+
+        const dictDel = await mockApi.getDictionaries();
+        assert.equal(dictDel.tags.some((t) => t.id === tagId), false);
+
+        await assert.rejects(
+            () => mockApi.addTagToTask(taskId, { tag_id: tagId, polaryzacja: '+' }, marek.id),
+            (err) => err.status === 400
+        );
+
+        const wsDel = await mockApi.getWorkspace(jan.id, marek.id);
+        const preservedTask = wsDel.activeEvaluation.tasks.find((x) => x.id === taskId);
+        assert.equal(preservedTask.tags.length, 1);
+        assert.equal(preservedTask.tags[0].tag_czy_aktywny, false);
+        assert.equal(wsDel.tagSummariesByCriterion[cyberCrit.id].posCount, 1);
+
+        await mockApi.restoreTag(tagId, admin.id);
+        const dictRestored = await mockApi.getDictionaries();
+        assert.ok(dictRestored.tags.some((t) => t.id === tagId));
 
         resetMockDb();
         const freshUsers = await mockApi.getUsers();
         assert.equal(freshUsers.users.length, 5);
         assert.equal(freshUsers.users.find((u) => u.id === anna.id).rank, 2);
+        const freshDict = await mockApi.getDictionaries();
+        assert.equal(freshDict.criteria.length, 14);
+        assert.equal(freshDict.tags.length, 16);
     });
 });

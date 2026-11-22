@@ -276,6 +276,73 @@ textarea { resize: vertical; min-height: 75px; }
 .badge-warning { background: var(--warning-bg); color: var(--warning); border-color: var(--warning-border); }
 .badge-wellbeing { background: var(--wellbeing-bg); color: var(--wellbeing); border-color: var(--wellbeing-border); }
 .badge-private { background: #eef2ff; color: #3730a3; border-color: #c7d2fe; }
+.badge-archived { background: #f1f5f9; color: #475569; border-color: #cbd5e1; font-style: italic; }
+
+.admin-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.admin-edit-highlight {
+  border-color: var(--warning);
+  box-shadow: 0 0 0 2px rgba(217, 119, 6, 0.14);
+}
+
+.criteria-checklist-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 8px;
+}
+
+.criteria-check-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: #ffffff;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.criteria-check-card:hover {
+  background: var(--bg-subtle);
+}
+
+.criteria-check-card.checked {
+  border-color: var(--primary);
+  background: var(--primary-light);
+}
+
+.criteria-check-card input[type="checkbox"] {
+  margin-top: 3px;
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.criteria-check-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.sheet-role-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  padding: 12px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+}
 
 .alert-box {
   padding: 12px 14px;

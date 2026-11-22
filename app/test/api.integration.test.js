@@ -423,4 +423,248 @@ test('Full end-to-end evaluation, HR events, visibility, appeals, and rank workf
         assert.equal(decided.status, 200);
         assert.equal(decided.data.newRank, 5);
     });
+
+    await t.test('11. Admin criteria management: CRUD, sheet rules, non-destructive archive & restore', async () => {
+        // Non-admin rejected
+        const nonAdminCrit = await apiReq('/api/criteria', { userId: jan.id });
+        assert.equal(nonAdminCrit.status, 403);
+
+        // Must assign at least 1 sheet
+        const noSheets = await apiReq('/api/criteria', {
+            method: 'POST',
+            userId: admin.id,
+            body: {
+                nazwa: 'Bez arkuszy',
+                opis: 'Test',
+                sheets: { A: null, B: null, C: null },
+            },
+        });
+        assert.equal(noSheets.status, 400);
+
+        // Create new criterion assigned as DODATKOWE on A, B, C
+        const createdCrit = await apiReq('/api/criteria', {
+            method: 'POST',
+            userId: admin.id,
+            body: {
+                nazwa: 'Cyberbezpieczeństwo i ochrona danych',
+                opis: 'Przestrzeganie zasad RODO.\nZgłaszanie incydentów.',
+                sheets: { A: 'DODATKOWE', B: 'DODATKOWE', C: 'DODATKOWE' },
+            },
+        });
+        assert.equal(createdCrit.status, 201);
+        const critId = createdCrit.data.criterion.id;
+        assert.equal(createdCrit.data.criterion.descriptions.length, 2);
+
+        // Duplicate name rejected with 409
+        const dupCrit = await apiReq('/api/criteria', {
+            method: 'POST',
+            userId: admin.id,
+            body: {
+                nazwa: 'cyberbezpieczeństwo i ochrona danych',
+                opis: 'Duplikat',
+                sheets: { A: 'DODATKOWE', B: null, C: null },
+            },
+        });
+        assert.equal(dupCrit.status, 409);
+
+        // Appears in dictionaries and can be selected in Jan's Sheet B setup
+        const dictAfterCreate = await apiReq('/api/dictionaries');
+        assert.ok(dictAfterCreate.data.criteria.some((c) => c.id === critId));
+        assert.ok(dictAfterCreate.data.sheetCriteria.B.additionalIds.includes(critId));
+
+        const janWs = await apiReq(`/api/users/${jan.id}/workspace`, { userId: marek.id });
+        const janEvalId = janWs.data.activeEvaluation.id;
+        const setupWithNewCrit = await apiReq(`/api/evaluations/${janEvalId}/setup`, {
+            method: 'PUT',
+            userId: marek.id,
+            body: {
+                data_rozmowy_wstepnej: '2026-01-25',
+                oczekiwania_i_cele: 'Rozszerzony zakres o cyberbezpieczeństwo.',
+                additionalCriteriaIds: [critId],
+                signByEvaluator: false,
+            },
+        });
+        assert.equal(setupWithNewCrit.status, 200);
+        assert.ok(setupWithNewCrit.data.evaluation.criteria.some((c) => c.kryterium_id === critId));
+
+        // Edit criterion name & sheet roles
+        const updatedCrit = await apiReq(`/api/criteria/${critId}`, {
+            method: 'PUT',
+            userId: admin.id,
+            body: {
+                nazwa: 'Cyberbezpieczeństwo i RODO',
+                opis: 'Przestrzeganie polityki bezpieczeństwa.\nOchrona danych osobowych.',
+                sheets: { A: null, B: 'DODATKOWE', C: 'DODATKOWE' },
+            },
+        });
+        assert.equal(updatedCrit.status, 200);
+        assert.equal(updatedCrit.data.criterion.nazwa, 'Cyberbezpieczeństwo i RODO');
+        assert.equal(updatedCrit.data.criterion.sheets.A, null);
+
+        // Soft-delete (archive) used criterion -> disappears from dictionaries, preserved in Jan's evaluation
+        const archivedCrit = await apiReq(`/api/criteria/${critId}`, {
+            method: 'DELETE',
+            userId: admin.id,
+        });
+        assert.equal(archivedCrit.status, 200);
+        assert.equal(archivedCrit.data.archived, true);
+        assert.equal(archivedCrit.data.criterion.czy_aktywne, false);
+        assert.ok(archivedCrit.data.criterion.usageCount >= 1);
+
+        const dictAfterArchive = await apiReq('/api/dictionaries');
+        assert.equal(dictAfterArchive.data.criteria.some((c) => c.id === critId), false);
+        assert.equal(dictAfterArchive.data.sheetCriteria.B.additionalIds.includes(critId), false);
+
+        const janWsAfterArchive = await apiReq(`/api/users/${jan.id}/workspace`, { userId: marek.id });
+        const preservedCrit = janWsAfterArchive.data.activeEvaluation.criteria.find((c) => c.kryterium_id === critId);
+        assert.ok(preservedCrit);
+        assert.equal(preservedCrit.nazwa, 'Cyberbezpieczeństwo i RODO');
+        assert.equal(preservedCrit.kryterium_czy_aktywne, false);
+
+        // Restore criterion so Test 12 can map tags to it
+        const restoredCrit = await apiReq(`/api/criteria/${critId}/restore`, {
+            method: 'PATCH',
+            userId: admin.id,
+        });
+        assert.equal(restoredCrit.status, 200);
+        assert.equal(restoredCrit.data.criterion.czy_aktywne, true);
+    });
+
+    await t.test('12. Admin tag management: create with criteria, full edit, non-destructive delete & restore', async () => {
+        // Non-admin rejected
+        const forbidden = await apiReq('/api/tags', { userId: jan.id });
+        assert.equal(forbidden.status, 403);
+
+        // KOMPETENCYJNY requires >= 1 criterion
+        const noCritTag = await apiReq('/api/tags', {
+            method: 'POST',
+            userId: admin.id,
+            body: { nazwa: 'Tag Bez Kryteriów', kategoria: 'KOMPETENCYJNY', criteriaIds: [] },
+        });
+        assert.equal(noCritTag.status, 400);
+
+        // DOBROSTAN auto-clears criteriaIds
+        const wellTag = await apiReq('/api/tags', {
+            method: 'POST',
+            userId: admin.id,
+            body: { nazwa: 'Wypalenie Testowe', kategoria: 'DOBROSTAN', opis: 'HR alert', criteriaIds: [1] },
+        });
+        assert.equal(wellTag.status, 201);
+        assert.deepEqual(wellTag.data.tag.criteriaIds, []);
+
+        // Create KOMPETENCYJNY tag simultaneously mapped to custom criterion + Komunikacja (1)
+        const adminCriteriaRes = await apiReq('/api/criteria', { userId: admin.id });
+        const cyberCrit = adminCriteriaRes.data.criteria.find((c) => c.nazwa === 'Cyberbezpieczeństwo i RODO');
+        assert.ok(cyberCrit);
+
+        const createdTag = await apiReq('/api/tags', {
+            method: 'POST',
+            userId: admin.id,
+            body: {
+                nazwa: 'Higiena Cyfrowa',
+                kategoria: 'KOMPETENCYJNY',
+                opis: 'bezpieczeństwo IT i RODO',
+                criteriaIds: [1, cyberCrit.id],
+            },
+        });
+        assert.equal(createdTag.status, 201);
+        const tagId = createdTag.data.tag.id;
+        assert.deepEqual(createdTag.data.tag.criteriaIds, [1, cyberCrit.id]);
+
+        // Duplicate name rejected with 409
+        const dupTag = await apiReq('/api/tags', {
+            method: 'POST',
+            userId: admin.id,
+            body: { nazwa: 'higiena cyfrowa', kategoria: 'KOMPETENCYJNY', criteriaIds: [1] },
+        });
+        assert.equal(dupTag.status, 409);
+
+        // Assign newly created tag to a task in Jan's evaluation -> feeds both criteria in workspace
+        const janWs = await apiReq(`/api/users/${jan.id}/workspace`, { userId: marek.id });
+        const janEvalId = janWs.data.activeEvaluation.id;
+        const taggedTask = await apiReq(`/api/evaluations/${janEvalId}/tasks`, {
+            method: 'POST',
+            userId: marek.id,
+            body: {
+                tytul: 'Audyt uprawnień i szkolenie RODO',
+                tags: [{ tag_id: tagId, polaryzacja: '+' }],
+                komentarz: 'Wzorowe wdrożenie polityki bezpieczeństwa.',
+            },
+        });
+        assert.equal(taggedTask.status, 201);
+        const taskId = taggedTask.data.task.id;
+
+        const wsAfterTag = await apiReq(`/api/users/${jan.id}/workspace`, { userId: marek.id });
+        assert.equal(wsAfterTag.data.tagSummariesByCriterion[cyberCrit.id].posCount, 1);
+        assert.ok(wsAfterTag.data.tagSummariesByCriterion[1].entries.some((e) => e.tagId === 'Higiena Cyfrowa'));
+
+        // Full edit: rename tag & remap criteria from [1, cyberCrit.id] -> [4, cyberCrit.id]
+        const editedTag = await apiReq(`/api/tags/${tagId}`, {
+            method: 'PUT',
+            userId: admin.id,
+            body: {
+                nazwa: 'Bezpieczeństwo Danych',
+                kategoria: 'KOMPETENCYJNY',
+                opis: 'RODO i procedury IT',
+                criteriaIds: [4, cyberCrit.id],
+            },
+        });
+        assert.equal(editedTag.status, 200);
+        assert.equal(editedTag.data.tag.nazwa, 'Bezpieczeństwo Danych');
+        assert.deepEqual(editedTag.data.tag.criteriaIds, [4, cyberCrit.id]);
+
+        const wsAfterEdit = await apiReq(`/api/users/${jan.id}/workspace`, { userId: marek.id });
+        const updatedTask = wsAfterEdit.data.activeEvaluation.tasks.find((x) => x.id === taskId);
+        assert.equal(updatedTask.tags[0].tag_nazwa, 'Bezpieczeństwo Danych');
+        assert.ok(wsAfterEdit.data.tagSummariesByCriterion[4].entries.some((e) => e.tagId === 'Bezpieczeństwo Danych'));
+        assert.equal(wsAfterEdit.data.tagSummariesByCriterion[1].entries.some((e) => e.tagId === 'Bezpieczeństwo Danych'), false);
+
+        // Non-destructive delete (archive): disappears from dictionaries & blocked for new tasks, ZERO loss of past data
+        const deletedTag = await apiReq(`/api/tags/${tagId}`, {
+            method: 'DELETE',
+            userId: admin.id,
+        });
+        assert.equal(deletedTag.status, 200);
+        assert.equal(deletedTag.data.archived, true);
+        assert.equal(deletedTag.data.tag.czy_aktywny, false);
+        assert.equal(deletedTag.data.tag.usageCount, 1);
+
+        const dictAfterDelete = await apiReq('/api/dictionaries');
+        assert.equal(dictAfterDelete.data.tags.some((t) => t.id === tagId), false);
+
+        // Assigning archived tag to a new task is rejected with 400
+        const assignArchived = await apiReq(`/api/tasks/${taskId}/tags`, {
+            method: 'POST',
+            userId: marek.id,
+            body: { tag_id: tagId, polaryzacja: '+', komentarz: 'Nie powinno się udać' },
+        });
+        assert.equal(assignArchived.status, 400);
+
+        // Historical task tag AND Wizard summary remain 100% preserved
+        const wsAfterDelete = await apiReq(`/api/users/${jan.id}/workspace`, { userId: marek.id });
+        const preservedTask = wsAfterDelete.data.activeEvaluation.tasks.find((x) => x.id === taskId);
+        assert.equal(preservedTask.tags.length, 1);
+        assert.equal(preservedTask.tags[0].tag_nazwa, 'Bezpieczeństwo Danych');
+        assert.equal(preservedTask.tags[0].tag_czy_aktywny, false);
+        assert.equal(wsAfterDelete.data.tagSummariesByCriterion[cyberCrit.id].posCount, 1);
+
+        // Restore tag -> reappears in dictionaries & can be assigned again
+        const restoredTag = await apiReq(`/api/tags/${tagId}/restore`, {
+            method: 'PATCH',
+            userId: admin.id,
+        });
+        assert.equal(restoredTag.status, 200);
+        assert.equal(restoredTag.data.restored, true);
+        assert.equal(restoredTag.data.tag.czy_aktywny, true);
+
+        const dictAfterRestore = await apiReq('/api/dictionaries');
+        assert.ok(dictAfterRestore.data.tags.some((t) => t.id === tagId));
+
+        const assignRestored = await apiReq(`/api/tasks/${taskId}/tags`, {
+            method: 'POST',
+            userId: marek.id,
+            body: { tag_id: tagId, polaryzacja: '+', komentarz: 'Po przywróceniu tagu' },
+        });
+        assert.equal(assignRestored.status, 201);
+    });
 });

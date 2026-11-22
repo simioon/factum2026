@@ -80,10 +80,11 @@ async function createActiveCycle(
     let criteriaIds = criteriaIdsOverride;
     if (!Array.isArray(criteriaIds) || criteriaIds.length === 0) {
         const mandRes = await client.query(
-            `SELECT kryterium_id
-             FROM arkusz_kryteria
-             WHERE kod_arkusza = $1 AND typ_kryterium = 'OBOWIAZKOWE'
-             ORDER BY id ASC;`,
+            `SELECT ak.kryterium_id
+             FROM arkusz_kryteria ak
+             JOIN slownik_kryteriow sk ON sk.id = ak.kryterium_id
+             WHERE ak.kod_arkusza = $1 AND ak.typ_kryterium = 'OBOWIAZKOWE' AND sk.czy_aktywne = TRUE
+             ORDER BY ak.id ASC;`,
             [typArkusza]
         );
         criteriaIds = mandRes.rows.map((r) => r.kryterium_id);
@@ -113,6 +114,7 @@ async function hydrateEvaluation(db, evalRow, { includePrivateTasks = true } = {
             okw.komentarz_czastkowy,
             sk.nazwa,
             sk.opis,
+            sk.czy_aktywne AS kryterium_czy_aktywne,
             COALESCE(ak.typ_kryterium, 'DODATKOWE') AS typ_kryterium
          FROM ocena_kryteria_wyniki okw
          JOIN slownik_kryteriow sk ON sk.id = okw.kryterium_id
@@ -157,6 +159,7 @@ async function hydrateEvaluation(db, evalRow, { includePrivateTasks = true } = {
                 st.nazwa AS tag_nazwa,
                 st.kategoria,
                 st.opis AS tag_opis,
+                st.czy_aktywny AS tag_czy_aktywny,
                 COALESCE(
                     ARRAY_AGG(tk.kryterium_id ORDER BY tk.kryterium_id)
                         FILTER (WHERE tk.kryterium_id IS NOT NULL),

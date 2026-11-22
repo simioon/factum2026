@@ -32,7 +32,7 @@ export function renderSetupTab(workspace, onRefresh) {
         .join('');
 
     const additionalCheckboxesHtml = state.dictionaries.criteria
-        .filter((c) => !mandatoryIds.includes(c.id))
+        .filter((c) => sheetConfig.additionalIds.includes(c.id))
         .map((c) => {
             const checked = activeCritIds.has(c.id) ? 'checked' : '';
             return `

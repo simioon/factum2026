@@ -178,9 +178,10 @@ router.put(
             }
 
             const sheetCritRes = await client.query(
-                `SELECT kryterium_id, typ_kryterium
-                 FROM arkusz_kryteria
-                 WHERE kod_arkusza = $1;`,
+                `SELECT ak.kryterium_id, ak.typ_kryterium
+                 FROM arkusz_kryteria ak
+                 JOIN slownik_kryteriow sk ON sk.id = ak.kryterium_id
+                 WHERE ak.kod_arkusza = $1 AND sk.czy_aktywne = TRUE;`,
                 [evalRow.typ_arkusza]
             );
             const mandatoryIds = sheetCritRes.rows

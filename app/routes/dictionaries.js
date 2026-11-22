@@ -19,7 +19,13 @@ router.get(
     asyncHandler(async (req, res) => {
         const [criteriaRes, sheetRes, tagsRes] = await Promise.all([
             query('SELECT id, nazwa, opis, czy_aktywne FROM slownik_kryteriow WHERE czy_aktywne = TRUE ORDER BY id ASC;'),
-            query('SELECT kod_arkusza, kryterium_id, typ_kryterium FROM arkusz_kryteria ORDER BY kod_arkusza ASC, id ASC;'),
+            query(`
+                SELECT ak.kod_arkusza, ak.kryterium_id, ak.typ_kryterium
+                FROM arkusz_kryteria ak
+                JOIN slownik_kryteriow sk ON sk.id = ak.kryterium_id
+                WHERE sk.czy_aktywne = TRUE
+                ORDER BY ak.kod_arkusza ASC, ak.id ASC;
+            `),
             query(`
                 SELECT
                     st.id,
@@ -68,6 +74,7 @@ router.get(
             nazwa: t.nazwa,
             kategoria: t.kategoria,
             opis: t.opis,
+            czy_aktywny: Boolean(t.czy_aktywny),
             isWellbeing: t.kategoria === 'DOBROSTAN',
             label: t.opis ? `${t.nazwa} (${t.opis})` : t.nazwa,
             criteriaIds: t.criteria_ids || [],
