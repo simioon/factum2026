@@ -1,5 +1,34 @@
 import { state } from './state.js';
 
+// Zmień tutaj, aby przełączyć format dat w całej aplikacji:
+// np. 'DD.MM.YYYY' | 'DD/MM/YYYY' | 'DD-MM-YYYY' | 'YYYY-MM-DD' | 'LONG_PL'
+export const DATE_FORMAT = 'DD.MM.YYYY';
+
+export function formatDate(value, format = DATE_FORMAT) {
+    if (!value) return '—';
+    const str = String(value).trim();
+    const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(str);
+    if (!match) return str;
+    const [, y, m, d] = match;
+
+    if (format === 'LONG_PL') {
+        const dt = new Date(Date.UTC(Number(y), Number(m) - 1, Number(d)));
+        return new Intl.DateTimeFormat('pl-PL', {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric',
+            timeZone: 'UTC',
+        }).format(dt);
+    }
+
+    return format.replace('YYYY', y).replace('MM', m).replace('DD', d);
+}
+
+export function formatDatesInText(text, format = DATE_FORMAT) {
+    if (!text) return '';
+    return String(text).replace(/\b(\d{4}-\d{2}-\d{2})\b/g, (m) => formatDate(m, format));
+}
+
 export function escapeHtml(str) {
     if (str === null || str === undefined) return '';
     return String(str)
@@ -14,13 +43,19 @@ export function toRomanRank(num) {
     return romans[Number(num)] || String(num || '');
 }
 
-export function formatDateTime(ts) {
+export function formatDateTime(ts, format = DATE_FORMAT) {
     if (!ts) return '—';
-    const str = String(ts);
-    if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
+    const str = String(ts).trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return formatDate(str, format);
+
+    const localMatch = /^(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2})/.exec(str);
+    if (localMatch && !str.endsWith('Z')) {
+        return `${formatDate(localMatch[1], format)} ${localMatch[2]}`;
+    }
+
     const d = new Date(str);
     if (Number.isNaN(d.getTime())) return str;
-    return `${d.toISOString().slice(0, 10)} ${d.toTimeString().slice(0, 5)}`;
+    return `${formatDate(d.toISOString().slice(0, 10), format)} ${d.toTimeString().slice(0, 5)}`;
 }
 
 export function showToast(message, type = '') {
@@ -84,11 +119,12 @@ export function getAllEvidenceBlocks(tasks = []) {
         for (const tg of task.tags || []) {
             const sign = tg.polaryzacja === '+' ? '+' : '-';
             const commentText = tg.komentarz || 'obserwacja bez dodatkowego komentarza';
-            const formattedLine = `• ${task.data_zdarzenia} – ${task.tytul} (${sign}${tg.tag_nazwa}): ${commentText}`;
+            const formattedDate = formatDate(task.data_zdarzenia);
+            const formattedLine = `• ${formattedDate} – ${task.tytul} (${sign}${tg.tag_nazwa}): ${commentText}`;
             blocks.push({
                 key: `${task.id}_${tg.id}`,
                 taskId: task.id,
-                date: task.data_zdarzenia,
+                date: formattedDate,
                 taskTitle: task.tytul,
                 tagName: tg.tag_nazwa,
                 polarity: tg.polaryzacja,
@@ -139,7 +175,7 @@ export function renderAlertsHtml(alerts = []) {
                         ? 'alert-warning'
                         : 'alert-info';
             return `<div class="alert-box ${cls}" style="margin-top:8px; padding:8px 10px;">
-                <strong>${escapeHtml(al.title)}:</strong> ${escapeHtml(al.message)}
+                <strong>${escapeHtml(al.title)}:</strong> ${escapeHtml(formatDatesInText(al.message))}
             </div>`;
         })
         .join('');

@@ -1,6 +1,6 @@
 import { api } from '../api.js';
 import { state } from '../state.js';
-import { escapeHtml, showToast, toRomanRank } from '../utils.js';
+import { escapeHtml, formatDate, showToast, toRomanRank } from '../utils.js';
 import { renderSubordinatesList } from './managerView.js';
 
 export function renderDirectorPanel(directorUser, callbacks) {
@@ -50,8 +50,8 @@ export function renderDirectorPanel(directorUser, callbacks) {
                             </div>
                             <p class="text-muted">
                                 Oceniający: ${escapeHtml(ap.oceniajacy_nazwa)} &bull;
-                                Data złożenia: ${escapeHtml(ap.data_zlozenia)} &bull;
-                                Termin rozpatrzenia: ${escapeHtml(ap.termin_rozpatrzenia)}
+                                Data złożenia: ${escapeHtml(formatDate(ap.data_zlozenia))} &bull;
+                                Termin rozpatrzenia: ${escapeHtml(formatDate(ap.termin_rozpatrzenia))}
                                 ${ap.po_terminie_ustawowym ? ' <span class="badge badge-negative">Złożono po 7 dniach (Demo)</span>' : ''}
                             </p>
                             <p style="margin-top:6px;"><strong>Treść sprzeciwu:</strong> ${escapeHtml(ap.uzasadnienie_pracownika)}</p>

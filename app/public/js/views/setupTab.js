@@ -1,6 +1,6 @@
 import { api } from '../api.js';
 import { state } from '../state.js';
-import { escapeHtml, formatDateTime, showToast } from '../utils.js';
+import { escapeHtml, formatDate, formatDateTime, showToast } from '../utils.js';
 
 export function renderSetupTab(workspace, onRefresh) {
     const container = document.getElementById('profile-tab-setup');
@@ -72,7 +72,7 @@ export function renderSetupTab(workspace, onRefresh) {
                         <strong>${escapeHtml(eventLabels[ev.typ_zdarzenia] || ev.typ_zdarzenia)}</strong>
                         <span class="badge badge-warning" style="margin-left:6px;">+${ev.dni_przesuniecia_terminu} dni</span>
                         <div class="text-muted" style="font-size:12px; margin-top:2px;">
-                            Okres: ${escapeHtml(ev.data_od)}${ev.data_do ? ` – ${escapeHtml(ev.data_do)}` : ''}
+                            Okres: ${escapeHtml(formatDate(ev.data_od))}${ev.data_do ? ` – ${escapeHtml(formatDate(ev.data_do))}` : ''}
                             ${ev.opis ? ` &bull; ${escapeHtml(ev.opis)}` : ''}
                         </div>
                     </div>
@@ -89,10 +89,10 @@ export function renderSetupTab(workspace, onRefresh) {
         <div class="card">
             <h3>Rozmowa wstępna i wyznaczenie kryteriów (Część I arkusza)</h3>
             <div class="alert-box ${isAfterNeg ? 'alert-negative' : 'alert-info'}">
-                <strong>Limit ustawowy na wyznaczenie kryteriów:</strong> ${limitDays} dni od startu cyklu (${escapeHtml(activeEvaluation.data_rozpoczecia_cyklu)})
-                &rarr; termin upływa: <strong>${escapeHtml(activeEvaluation.termin_wyznaczenia_kryteriow)}</strong>.
+                <strong>Limit ustawowy na wyznaczenie kryteriów:</strong> ${limitDays} dni od startu cyklu (${escapeHtml(formatDate(activeEvaluation.data_rozpoczecia_cyklu))})
+                &rarr; termin upływa: <strong>${escapeHtml(formatDate(activeEvaluation.termin_wyznaczenia_kryteriow))}</strong>.
                 ${isAfterNeg ? ' (Skrócony termin 7 dni z powodu poprzedniej oceny negatywnej!)' : ''}
-                <br><strong>Planowana data oceny końcowej:</strong> ${escapeHtml(activeEvaluation.planowana_data_oceny)}
+                <br><strong>Planowana data oceny końcowej:</strong> ${escapeHtml(formatDate(activeEvaluation.planowana_data_oceny))}
             </div>
             ${signStatusHtml}
 
@@ -132,7 +132,7 @@ export function renderSetupTab(workspace, onRefresh) {
         <div class="card">
             <div class="card-header">
                 <h3>Zdarzenia kadrowe (przesunięcie terminu oceny)</h3>
-                <span class="badge badge-primary">Planowana ocena: ${escapeHtml(activeEvaluation.planowana_data_oceny)}</span>
+                <span class="badge badge-primary">Planowana ocena: ${escapeHtml(formatDate(activeEvaluation.planowana_data_oceny))}</span>
             </div>
             <form id="hr-event-form" style="margin-bottom:16px; padding-bottom:14px; border-bottom:1px solid var(--border-color);">
                 <div class="grid-3">
@@ -221,7 +221,7 @@ export function renderSetupTab(workspace, onRefresh) {
                     dni_przesuniecia_terminu: rawDays === '' ? undefined : Number(rawDays),
                     opis: container.querySelector('#hr-event-desc').value.trim(),
                 });
-                showToast(`Dodano zdarzenie kadrowe. Nowy termin oceny: ${res.planowana_data_oceny}`, 'success');
+                showToast(`Dodano zdarzenie kadrowe. Nowy termin oceny: ${formatDate(res.planowana_data_oceny)}`, 'success');
                 await onRefresh();
             } catch (err) {
                 showToast(err.message, 'error');
@@ -233,7 +233,7 @@ export function renderSetupTab(workspace, onRefresh) {
         btn.addEventListener('click', async () => {
             try {
                 const res = await api.deleteHrEvent(Number(btn.dataset.deleteHrEvent));
-                showToast(`Usunięto zdarzenie. Termin oceny: ${res.planowana_data_oceny}`, 'success');
+                showToast(`Usunięto zdarzenie. Termin oceny: ${formatDate(res.planowana_data_oceny)}`, 'success');
                 await onRefresh();
             } catch (err) {
                 showToast(err.message, 'error');

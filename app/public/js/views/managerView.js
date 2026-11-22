@@ -1,5 +1,5 @@
 import { state } from '../state.js';
-import { escapeHtml, renderAlertsHtml, toRomanRank } from '../utils.js';
+import { escapeHtml, formatDate, renderAlertsHtml, toRomanRank } from '../utils.js';
 import { renderEmployeePanel } from './employeeView.js';
 import { renderSetupTab } from './setupTab.js';
 import { renderTasksTab } from './tasksTab.js';
@@ -86,7 +86,7 @@ export function renderManagerHistory() {
                 return `
                     <tr>
                         <td><strong>${escapeHtml(ev.pracownik_nazwa)}</strong></td>
-                        <td>${escapeHtml(ev.data_rozmowy_oceniajacej || ev.data_zapoznania_z_ocena || '—')}</td>
+                        <td>${escapeHtml(formatDate(ev.data_rozmowy_oceniajacej || ev.data_zapoznania_z_ocena))}</td>
                         <td>Arkusz ${escapeHtml(ev.typ_arkusza)} (p.${ev.numer_podejscia})</td>
                         <td>${ev.srednia_punktow ?? '—'} (${escapeHtml(ev.poziom_oceny_label || '')})</td>
                         <td><span class="badge ${ev.wynik_ogolny === 'POZYTYWNA' ? 'badge-positive' : 'badge-negative'}">${escapeHtml(ev.wynik_ogolny)}</span></td>

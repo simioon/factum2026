@@ -1,6 +1,6 @@
 import { api } from '../api.js';
 import { state } from '../state.js';
-import { escapeHtml, showToast } from '../utils.js';
+import { escapeHtml, formatDate, showToast } from '../utils.js';
 
 export function renderTasksTab(workspace, onRefresh) {
     const container = document.getElementById('profile-tab-tasks');
@@ -62,7 +62,7 @@ export function renderTasksTab(workspace, onRefresh) {
                                     ${visBadge}
                                 </div>
                                 <div style="display:flex; gap:8px; align-items:center;">
-                                    <span class="text-muted">${escapeHtml(t.data_zdarzenia)}</span>
+                                    <span class="text-muted">${escapeHtml(formatDate(t.data_zdarzenia))}</span>
                                     <button type="button" class="btn btn-xs btn-negative" data-delete-task="${t.id}">Usuń</button>
                                 </div>
                             </div>

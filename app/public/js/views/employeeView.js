@@ -1,6 +1,6 @@
 import { api } from '../api.js';
 import { state } from '../state.js';
-import { escapeHtml, formatDateTime, showToast, toRomanRank } from '../utils.js';
+import { escapeHtml, formatDate, formatDateTime, showToast, toRomanRank } from '../utils.js';
 import { printEvaluationSheet } from './printSheet.js';
 
 export function renderEmployeePanel(workspace, targetElementId, onRefresh) {
@@ -30,7 +30,7 @@ export function renderEmployeePanel(workspace, targetElementId, onRefresh) {
         actionBannersHtml += `
             <div class="alert-box alert-warning">
                 <strong>Część I — Oczekuje na Twój e-podpis kryteriów:</strong>
-                Przełożony wyznaczył kryteria oceny i zapisał ustalenia z rozmowy wstępnej (${escapeHtml(activeEvaluation.data_rozmowy_wstepnej || '—')}).
+                Przełożony wyznaczył kryteria oceny i zapisał ustalenia z rozmowy wstępnej (${escapeHtml(formatDate(activeEvaluation.data_rozmowy_wstepnej))}).
                 ${activeEvaluation.oczekiwania_i_cele ? `<p style="margin-top:6px;"><em>Ustalenia:</em> ${escapeHtml(activeEvaluation.oczekiwania_i_cele)}</p>` : ''}
                 <div style="margin-top:10px;">
                     <button type="button" class="btn btn-positive btn-sm" id="btn-emp-sign-criteria" data-eval-id="${activeEvaluation.id}">
@@ -94,7 +94,7 @@ export function renderEmployeePanel(workspace, targetElementId, onRefresh) {
                     <div class="task-item">
                         <div style="display:flex; justify-content:space-between; gap:8px; flex-wrap:wrap;">
                             <strong>${escapeHtml(t.tytul)}</strong>
-                            <span class="text-muted">${escapeHtml(t.data_zdarzenia)}</span>
+                            <span class="text-muted">${escapeHtml(formatDate(t.data_zdarzenia))}</span>
                         </div>
                         ${t.opis ? `<p class="text-muted" style="margin-top:4px;">${escapeHtml(t.opis)}</p>` : ''}
                         <div style="margin-top:8px; display:flex; flex-wrap:wrap; gap:6px;">${tags}</div>
@@ -134,7 +134,7 @@ export function renderEmployeePanel(workspace, targetElementId, onRefresh) {
                         <div class="alert-box alert-warning" style="margin-top:10px;">
                             <strong>Status odwołania (sprzeciwu):</strong> ${escapeHtml(statusLabel)}
                             ${latestAppeal.uzasadnienie_decyzji ? `<br><em>Decyzja Dyrektora:</em> ${escapeHtml(latestAppeal.uzasadnienie_decyzji)}` : ''}
-                            <br><span class="text-muted" style="font-size:12px;">Złożono: ${escapeHtml(latestAppeal.data_zlozenia)} &bull; Termin rozpatrzenia (14 dni): ${escapeHtml(latestAppeal.termin_rozpatrzenia)}</span>
+                            <br><span class="text-muted" style="font-size:12px;">Złożono: ${escapeHtml(formatDate(latestAppeal.data_zlozenia))} &bull; Termin rozpatrzenia (14 dni): ${escapeHtml(formatDate(latestAppeal.termin_rozpatrzenia))}</span>
                         </div>
                     `;
                 } else if (ev.status === 'ZAKONCZONA') {
@@ -156,7 +156,7 @@ export function renderEmployeePanel(workspace, targetElementId, onRefresh) {
                     <div class="task-item">
                         <div style="display:flex; flex-wrap:wrap; justify-content:space-between; gap:8px; margin-bottom:8px;">
                             <div>
-                                <strong>Ocena z dnia ${escapeHtml(ev.data_rozmowy_oceniajacej || ev.data_zapoznania_z_ocena || '—')}</strong>
+                                <strong>Ocena z dnia ${escapeHtml(formatDate(ev.data_rozmowy_oceniajacej || ev.data_zapoznania_z_ocena))}</strong>
                                 (Arkusz ${escapeHtml(ev.typ_arkusza)}, podejście ${ev.numer_podejscia})
                                 <span class="text-muted"> — Oceniający: ${evBy ? escapeHtml(evBy.imie_nazwisko) : '—'}</span>
                             </div>
@@ -221,14 +221,14 @@ export function renderEmployeePanel(workspace, targetElementId, onRefresh) {
                 <h3>Oś czasu bieżącego okresu oceny</h3>
                 <div class="timeline">
                     <div class="timeline-step done">
-                        <div class="timeline-date">${escapeHtml(activeEvaluation.data_rozpoczecia_cyklu)}</div>
+                        <div class="timeline-date">${escapeHtml(formatDate(activeEvaluation.data_rozpoczecia_cyklu))}</div>
                         <div><strong>Początek cyklu</strong></div>
                         <div class="text-muted">Rozpoczęcie okresu oceny</div>
                     </div>
                     <div class="timeline-step ${activeEvaluation.data_rozmowy_wstepnej ? 'done' : 'urgent'}">
-                        <div class="timeline-date">Limit: ${escapeHtml(activeEvaluation.termin_wyznaczenia_kryteriow)}</div>
+                        <div class="timeline-date">Limit: ${escapeHtml(formatDate(activeEvaluation.termin_wyznaczenia_kryteriow))}</div>
                         <div><strong>Rozmowa wstępna (${criteriaLimitDays} dni)</strong></div>
-                        <div class="text-muted">${activeEvaluation.data_rozmowy_wstepnej ? `Odbyta: ${escapeHtml(activeEvaluation.data_rozmowy_wstepnej)}` : 'Oczekuje na ustalenie'}</div>
+                        <div class="text-muted">${activeEvaluation.data_rozmowy_wstepnej ? `Odbyta: ${escapeHtml(formatDate(activeEvaluation.data_rozmowy_wstepnej))}` : 'Oczekuje na ustalenie'}</div>
                     </div>
                     <div class="timeline-step">
                         <div class="timeline-date">${escapeHtml(activeEvaluation.status_label)}</div>
@@ -236,7 +236,7 @@ export function renderEmployeePanel(workspace, targetElementId, onRefresh) {
                         <div class="text-muted">Obserwacja i zbieranie tagów</div>
                     </div>
                     <div class="timeline-step">
-                        <div class="timeline-date">${escapeHtml(activeEvaluation.planowana_data_oceny)}</div>
+                        <div class="timeline-date">${escapeHtml(formatDate(activeEvaluation.planowana_data_oceny))}</div>
                         <div><strong>Planowany termin oceny</strong></div>
                         <div class="text-muted">Cykl oceny${hrNote}</div>
                     </div>
