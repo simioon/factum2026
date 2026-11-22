@@ -125,6 +125,10 @@ export const api = {
         useMockMode
             ? mockApi.addTagToTask(taskId, payload, state.currentUserId)
             : apiFetch(`/api/tasks/${taskId}/tags`, { method: 'POST', body: JSON.stringify(payload) }),
+    addTagsToTask: (taskId, payload) =>
+        useMockMode
+            ? mockApi.addTagToTask(taskId, payload, state.currentUserId)
+            : apiFetch(`/api/tasks/${taskId}/tags`, { method: 'POST', body: JSON.stringify(payload) }),
     deleteTaskTag: (taskId, taskTagId) =>
         useMockMode
             ? mockApi.deleteTaskTag(taskId, taskTagId, state.currentUserId)

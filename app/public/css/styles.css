@@ -382,6 +382,159 @@ th {
 .inline-tag-form select { flex: 1 1 170px; }
 .inline-tag-form input[type="text"] { flex: 2 1 200px; }
 
+.task-batch-toggle-row {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--border-color);
+}
+
+.batch-picker-panel {
+  margin-top: 10px;
+}
+
+.batch-tag-picker {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 12px;
+}
+
+.batch-picker-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.batch-picker-title {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--primary);
+}
+
+.tag-chip-group-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  margin-bottom: 6px;
+}
+
+.tag-chip-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tag-chip {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--border-color);
+  border-radius: 99px;
+  background: #ffffff;
+  overflow: hidden;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.tag-chip-label {
+  border: none;
+  background: transparent;
+  padding: 4px 8px 4px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  color: var(--text-main);
+  cursor: pointer;
+}
+
+.tag-chip-wellbeing .tag-chip-label {
+  padding-right: 10px;
+  color: var(--wellbeing);
+}
+
+.tag-chip-actions {
+  display: inline-flex;
+  border-left: 1px solid var(--border-color);
+}
+
+.tag-chip-pol-btn {
+  border: none;
+  background: transparent;
+  width: 24px;
+  height: 24px;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: background 0.12s, color 0.12s;
+}
+
+.tag-chip-pol-btn.pol-pos:hover {
+  background: var(--positive-bg);
+  color: var(--positive);
+}
+
+.tag-chip-pol-btn.pol-neg:hover {
+  background: var(--negative-bg);
+  color: var(--negative);
+}
+
+.tag-chip.selected-pos {
+  background: var(--positive-bg);
+  border-color: var(--positive-border);
+}
+.tag-chip.selected-pos .tag-chip-label {
+  color: #166534;
+}
+.tag-chip-pol-btn.pol-pos.active {
+  background: var(--positive);
+  color: #ffffff;
+}
+
+.tag-chip.selected-neg {
+  background: var(--negative-bg);
+  border-color: var(--negative-border);
+}
+.tag-chip.selected-neg .tag-chip-label {
+  color: #991b1b;
+}
+.tag-chip-pol-btn.pol-neg.active {
+  background: var(--negative);
+  color: #ffffff;
+}
+
+.tag-chip.selected-wellbeing {
+  background: var(--wellbeing);
+  border-color: var(--wellbeing);
+}
+.tag-chip.selected-wellbeing .tag-chip-label {
+  color: #ffffff;
+}
+
+.batch-selection-summary {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 8px 10px;
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+}
+
+.batch-selection-pills {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
 .hr-event-row {
   display: flex;
   flex-wrap: wrap;

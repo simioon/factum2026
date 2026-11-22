@@ -1,4 +1,4 @@
-import { escapeHtml, formatDateTime, getCriterionById } from '../utils.js';
+import { escapeHtml, formatDate, formatDateTime, getCriterionById } from '../utils.js';
 
 export function printEvaluationSheet({ employee, evaluator, evaluation }) {
     const area = document.getElementById('print-sheet-area');
@@ -30,7 +30,7 @@ export function printEvaluationSheet({ employee, evaluator, evaluation }) {
         <p style="text-align:center; margin-bottom:16px;">Wygenerowano przez Cyfrowego Asystenta Ocen Okresowych (Podejście nr ${evaluation.numer_podejscia || 1})</p>
         <p><strong>Oceniany:</strong> ${employee ? `${escapeHtml(employee.imie_nazwisko)} — ${escapeHtml(employee.nazwa_stanowiska)}` : escapeHtml(evaluation.pracownik_nazwa || '')}</p>
         <p><strong>Oceniający:</strong> ${evaluator ? `${escapeHtml(evaluator.imie_nazwisko)} — ${escapeHtml(evaluator.nazwa_stanowiska)}` : escapeHtml(evaluation.oceniajacy_nazwa || '')}</p>
-        <p><strong>Data sporządzenia:</strong> ${escapeHtml(dateText)}</p>
+        <p><strong>Data sporządzenia:</strong> ${escapeHtml(formatDate(dateText))}</p>
         <table>
             <thead><tr><th>Kryterium</th><th>Ocena cząstkowa</th></tr></thead>
             <tbody>${rows}</tbody>

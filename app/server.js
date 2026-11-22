@@ -1,5 +1,6 @@
 const express = require('express');
 const path = require('path');
+const { pool } = require('./db/pool');
 const { initDatabase } = require('./db/init');
 const { attachCurrentUser } = require('./middleware/demoAuth');
 const { errorHandler } = require('./middleware/errorHandler');
@@ -16,6 +17,7 @@ const rankRequestsRouter = require('./routes/rankRequests');
 const app = express();
 const port = process.env.PORT || 3000;
 
+app.set('trust proxy', 1);
 app.use(express.json({ limit: '1mb' }));
 app.use(attachCurrentUser);
 app.use(express.static(path.join(__dirname, 'public')));
@@ -37,9 +39,24 @@ app.use(errorHandler);
 
 initDatabase()
     .then(() => {
-        app.listen(port, '0.0.0.0', () => {
+        const server = app.listen(port, '0.0.0.0', () => {
             console.log(`Node.js listening on port ${port}`);
         });
+
+        const shutdown = (signal) => {
+            console.log(`Received ${signal}, shutting down gracefully...`);
+            server.close(async () => {
+                try {
+                    await pool.end();
+                } catch (err) {
+                    console.error('Error closing PostgreSQL pool:', err);
+                }
+                process.exit(0);
+            });
+        };
+
+        process.on('SIGTERM', () => shutdown('SIGTERM'));
+        process.on('SIGINT', () => shutdown('SIGINT'));
     })
     .catch((err) => {
         console.error('Failed to initialize database:', err);

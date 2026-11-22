@@ -4,6 +4,7 @@ import {
     buildSmartIprzPills,
     calculateFinalResultClient,
     escapeHtml,
+    formatDate,
     formatDateTime,
     getAllEvidenceBlocks,
     showToast,
@@ -130,7 +131,7 @@ export function renderWizardTab(workspace, onFinalized) {
                             <div class="tag-row ${isPos ? 'pos' : 'neg'}" style="margin-bottom:6px;">
                                 <div class="tag-row-content">
                                     <strong style="color:${isPos ? 'var(--positive)' : 'var(--negative)'};">${isPos ? '(+)' : '(-)'} ${escapeHtml(e.tagId)}</strong>
-                                    <span><strong>${escapeHtml(e.taskTitle)}</strong> (${escapeHtml(e.taskDate)}): ${escapeHtml(e.comment || '—')}</span>
+                                    <span><strong>${escapeHtml(e.taskTitle)}</strong> (${escapeHtml(formatDate(e.taskDate))}): ${escapeHtml(e.comment || '—')}</span>
                                 </div>
                             </div>
                         `;

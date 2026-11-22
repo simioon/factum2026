@@ -116,6 +116,71 @@ test('Offline mockApi reproduces full evaluation, HR event, visibility, appeal, 
         assert.equal(empWs.activeEvaluation.tasks.some((x) => x.id === priv.task.id), false);
     });
 
+    await t.test('5b. Batch tagging on task creation & existing task + atomic rejection', async () => {
+        const ws = await mockApi.getWorkspace(tomasz.id, jan.id);
+        const evalId = ws.activeEvaluation.id;
+        const tJasny = dictionaries.tags.find((tg) => tg.nazwa === '#JasnyPrzekaz');
+        const tTerm = dictionaries.tags.find((tg) => tg.nazwa === '#TerminowośćIPriorytety');
+        const tWell = dictionaries.tags.find((tg) => tg.nazwa === '#Nadgodziny');
+
+        const created = await mockApi.createTask(
+            evalId,
+            {
+                tytul: 'Wpis z wsadowym tagowaniem',
+                widocznosc: 'OBIE_STRONY',
+                tags: [
+                    { tag_id: tJasny.id, polaryzacja: '+' },
+                    { tag_id: tTerm.id, polaryzacja: '-' },
+                    { tag_id: tWell.id, polaryzacja: '+' },
+                ],
+                komentarz: 'Wspólna notatka wyjaśniająca.',
+            },
+            jan.id
+        );
+        assert.equal(created.task.tags.length, 3);
+        assert.equal(created.task.tags[2].polaryzacja, '-');
+        assert.equal(created.task.tags[0].komentarz, 'Wspólna notatka wyjaśniająca.');
+
+        const taskId = created.task.id;
+        const batchRes = await mockApi.addTagToTask(
+            taskId,
+            {
+                tags: [
+                    { tag_id: tJasny.id, polaryzacja: '-' },
+                    { tag_id: tTerm.id, polaryzacja: '+' },
+                ],
+                komentarz: 'Druga notatka.',
+            },
+            jan.id
+        );
+        assert.equal(batchRes.taskTags.length, 2);
+
+        await assert.rejects(
+            () => mockApi.addTagToTask(taskId, { tags: [], komentarz: 'Pusty' }, jan.id),
+            (err) => err.status === 400
+        );
+
+        await assert.rejects(
+            () =>
+                mockApi.addTagToTask(
+                    taskId,
+                    {
+                        tags: [
+                            { tag_id: tJasny.id, polaryzacja: '+' },
+                            { tag_id: 999999, polaryzacja: '+' },
+                        ],
+                        komentarz: 'Rollback',
+                    },
+                    jan.id
+                ),
+            (err) => err.status === 400
+        );
+
+        const afterWs = await mockApi.getWorkspace(tomasz.id, jan.id);
+        const savedTask = afterWs.activeEvaluation.tasks.find((x) => x.id === taskId);
+        assert.equal(savedTask.tags.length, 5);
+    });
+
     await t.test('6. Negative evaluation requires justification', async () => {
         const ws = await mockApi.getWorkspace(tomasz.id, jan.id);
         const scores = Object.fromEntries(ws.activeEvaluation.criteria.map((c) => [c.kryterium_id, 3]));

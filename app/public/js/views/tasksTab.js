@@ -1,6 +1,173 @@
 import { api } from '../api.js';
 import { state } from '../state.js';
-import { escapeHtml, showToast } from '../utils.js';
+import { escapeHtml, formatDate, showToast } from '../utils.js';
+
+function renderBatchTagPicker(pickerId, tagsCatalog, { title, notePlaceholder }) {
+    const competenceTags = tagsCatalog.filter((t) => !t.isWellbeing);
+    const wellbeingTags = tagsCatalog.filter((t) => t.isWellbeing);
+
+    const compChipsHtml = competenceTags
+        .map(
+            (t) => `
+        <div class="tag-chip" data-chip-tag-id="${t.id}" title="${escapeHtml(t.opis || t.nazwa)}">
+            <button type="button" class="tag-chip-label" data-chip-cycle="${t.id}">
+                ${escapeHtml(t.nazwa)}
+            </button>
+            <div class="tag-chip-actions">
+                <button type="button" class="tag-chip-pol-btn pol-pos" data-chip-set="${t.id}" data-pol="+" aria-label="Dodaj pozytywny ${escapeHtml(t.nazwa)}">+</button>
+                <button type="button" class="tag-chip-pol-btn pol-neg" data-chip-set="${t.id}" data-pol="-" aria-label="Dodaj negatywny ${escapeHtml(t.nazwa)}">−</button>
+            </div>
+        </div>
+    `
+        )
+        .join('');
+
+    const wellChipsHtml = wellbeingTags
+        .map(
+            (t) => `
+        <div class="tag-chip tag-chip-wellbeing" data-chip-tag-id="${t.id}" data-wellbeing="1" title="${escapeHtml(t.opis || t.nazwa)}">
+            <button type="button" class="tag-chip-label" data-chip-well="${t.id}">
+                [HR] ${escapeHtml(t.nazwa)}
+            </button>
+        </div>
+    `
+        )
+        .join('');
+
+    return `
+        <div class="batch-tag-picker" data-picker-id="${escapeHtml(pickerId)}">
+            <div class="batch-picker-header">
+                <span class="batch-picker-title">${escapeHtml(title)}</span>
+                <span class="text-muted" style="font-size:12px;">Kliknij <strong>+</strong> lub <strong>−</strong> przy wybranych tagach (możesz łączyć różne strony w jednym zestawie)</span>
+            </div>
+
+            <div class="tag-chip-group-label">Tagi kompetencyjne:</div>
+            <div class="tag-chip-grid">${compChipsHtml}</div>
+
+            <div class="tag-chip-group-label" style="margin-top:8px;">Sygnały dobrostanu (Wirtualny HR Partner — nie obniżają oceny):</div>
+            <div class="tag-chip-grid">${wellChipsHtml}</div>
+
+            <div class="batch-selection-summary hidden" data-picker-summary="${escapeHtml(pickerId)}">
+                <div class="batch-selection-pills" data-picker-pills="${escapeHtml(pickerId)}"></div>
+                <button type="button" class="btn btn-xs" data-picker-clear="${escapeHtml(pickerId)}">Wyczyść wybór</button>
+            </div>
+
+            <div class="form-group" style="margin-top:10px; margin-bottom:0;">
+                <label for="picker-note-${escapeHtml(pickerId)}">Wspólna notatka wyjaśniająca dla zaznaczonych tagów</label>
+                <input type="text" id="picker-note-${escapeHtml(pickerId)}" placeholder="${escapeHtml(notePlaceholder)}">
+            </div>
+        </div>
+    `;
+}
+
+function wireBatchTagPicker(container, pickerId, tagsCatalog, { onChange } = {}) {
+    const pickerEl = container.querySelector(`[data-picker-id="${pickerId}"]`);
+    if (!pickerEl) return null;
+
+    const tagById = new Map(tagsCatalog.map((t) => [t.id, t]));
+    // Map<tagId, '+' | '-'>
+    const selected = new Map();
+
+    const summaryEl = pickerEl.querySelector(`[data-picker-summary="${pickerId}"]`);
+    const pillsEl = pickerEl.querySelector(`[data-picker-pills="${pickerId}"]`);
+    const clearBtn = pickerEl.querySelector(`[data-picker-clear="${pickerId}"]`);
+    const noteInput = pickerEl.querySelector(`#picker-note-${pickerId}`);
+
+    function syncVisuals() {
+        pickerEl.querySelectorAll('[data-chip-tag-id]').forEach((chip) => {
+            const tid = Number(chip.dataset.chipTagId);
+            const pol = selected.get(tid);
+            const isWell = chip.dataset.wellbeing === '1';
+
+            chip.classList.toggle('selected-pos', !isWell && pol === '+');
+            chip.classList.toggle('selected-neg', !isWell && pol === '-');
+            chip.classList.toggle('selected-wellbeing', isWell && Boolean(pol));
+
+            const posBtn = chip.querySelector('.pol-pos');
+            const negBtn = chip.querySelector('.pol-neg');
+            if (posBtn) posBtn.classList.toggle('active', pol === '+');
+            if (negBtn) negBtn.classList.toggle('active', pol === '-');
+        });
+
+        if (selected.size === 0) {
+            summaryEl.classList.add('hidden');
+            pillsEl.innerHTML = '';
+        } else {
+            summaryEl.classList.remove('hidden');
+            const badges = Array.from(selected.entries())
+                .map(([tid, pol]) => {
+                    const def = tagById.get(tid);
+                    if (!def) return '';
+                    const cls = def.isWellbeing
+                        ? 'badge-wellbeing'
+                        : pol === '+'
+                          ? 'badge-positive'
+                          : 'badge-negative';
+                    const prefix = def.isWellbeing ? '[HR] ' : `(${pol}) `;
+                    return `<span class="badge ${cls}">${prefix}${escapeHtml(def.nazwa)}</span>`;
+                })
+                .join(' ');
+            pillsEl.innerHTML = `<strong style="font-size:12px;">Wybrane (${selected.size}):</strong> ${badges}`;
+        }
+
+        if (typeof onChange === 'function') {
+            onChange(selected.size);
+        }
+    }
+
+    pickerEl.querySelectorAll('[data-chip-set]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const tid = Number(btn.dataset.chipSet);
+            const pol = btn.dataset.pol;
+            if (selected.get(tid) === pol) selected.delete(tid);
+            else selected.set(tid, pol);
+            syncVisuals();
+        });
+    });
+
+    pickerEl.querySelectorAll('[data-chip-cycle]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const tid = Number(btn.dataset.chipCycle);
+            const cur = selected.get(tid);
+            if (!cur) selected.set(tid, '+');
+            else if (cur === '+') selected.set(tid, '-');
+            else selected.delete(tid);
+            syncVisuals();
+        });
+    });
+
+    pickerEl.querySelectorAll('[data-chip-well]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const tid = Number(btn.dataset.chipWell);
+            if (selected.has(tid)) selected.delete(tid);
+            else selected.set(tid, '-');
+            syncVisuals();
+        });
+    });
+
+    if (clearBtn) {
+        clearBtn.addEventListener('click', () => {
+            selected.clear();
+            syncVisuals();
+        });
+    }
+
+    syncVisuals();
+
+    return {
+        getSelection: () =>
+            Array.from(selected.entries()).map(([tag_id, polaryzacja]) => ({
+                tag_id,
+                polaryzacja,
+            })),
+        getNote: () => (noteInput ? noteInput.value.trim() : ''),
+        clear: () => {
+            selected.clear();
+            if (noteInput) noteInput.value = '';
+            syncVisuals();
+        },
+    };
+}
 
 export function renderTasksTab(workspace, onRefresh) {
     const container = document.getElementById('profile-tab-tasks');
@@ -13,9 +180,7 @@ export function renderTasksTab(workspace, onRefresh) {
     }
 
     const tasks = activeEvaluation.tasks || [];
-    const tagOptionsHtml = ((state.dictionaries && state.dictionaries.tags) || [])
-        .map((t) => `<option value="${t.id}">${escapeHtml(t.label)}</option>`)
-        .join('');
+    const tagsCatalog = (state.dictionaries && state.dictionaries.tags) || [];
 
     const tasksListHtml =
         tasks.length === 0
@@ -62,7 +227,7 @@ export function renderTasksTab(workspace, onRefresh) {
                                     ${visBadge}
                                 </div>
                                 <div style="display:flex; gap:8px; align-items:center;">
-                                    <span class="text-muted">${escapeHtml(t.data_zdarzenia)}</span>
+                                    <span class="text-muted">${escapeHtml(formatDate(t.data_zdarzenia))}</span>
                                     <button type="button" class="btn btn-xs btn-negative" data-delete-task="${t.id}">Usuń</button>
                                 </div>
                             </div>
@@ -70,14 +235,23 @@ export function renderTasksTab(workspace, onRefresh) {
 
                             <div class="task-tags-list">${tagsHtml}</div>
 
-                            <div class="inline-tag-form">
-                                <select id="tag-select-${t.id}">${tagOptionsHtml}</select>
-                                <select id="tag-polarity-${t.id}" style="flex: 0 1 155px;">
-                                    <option value="+">(+) Strona dodatnia</option>
-                                    <option value="-">(-) Strona ujemna</option>
-                                </select>
-                                <input type="text" id="tag-comment-${t.id}" placeholder="Komentarz do taga (np. z czego wynika)...">
-                                <button type="button" class="btn btn-sm btn-primary" data-add-tag="${t.id}">+ Przypisz tag</button>
+                            <div class="task-batch-toggle-row">
+                                <button type="button" class="btn btn-sm" data-toggle-batch-picker="${t.id}">
+                                    + Przypisz tagi (wiele naraz)
+                                </button>
+                            </div>
+
+                            <div id="batch-picker-panel-${t.id}" class="batch-picker-panel hidden">
+                                ${renderBatchTagPicker(`task-${t.id}`, tagsCatalog, {
+                                    title: 'Wybierz tagi do przypisania dla tego wpisu:',
+                                    notePlaceholder: 'Wyjaśnij kontekst dla zaznaczonych tagów (np. co poszło wzorowo lub wymaga poprawy)...',
+                                })}
+                                <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+                                    <button type="button" class="btn btn-sm btn-primary" data-submit-batch-tags="${t.id}" disabled>
+                                        + Przypisz zaznaczone tagi (0)
+                                    </button>
+                                    <button type="button" class="btn btn-sm" data-cancel-batch-picker="${t.id}">Zamknij</button>
+                                </div>
                             </div>
                         </div>
                     `;
@@ -109,7 +283,15 @@ export function renderTasksTab(workspace, onRefresh) {
                     <label for="new-task-desc">Krótki opis</label>
                     <input type="text" id="new-task-desc" placeholder="Krótki kontekst wykonanego zadania...">
                 </div>
-                <button type="submit" class="btn btn-primary">+ Dodaj zadanie do dziennika</button>
+
+                <div style="margin-bottom:14px;">
+                    ${renderBatchTagPicker('new-task', tagsCatalog, {
+                        title: 'Przypisz tagi od razu (opcjonalnie):',
+                        notePlaceholder: 'Wspólna notatka wyjaśniająca dla wybranych tagów...',
+                    })}
+                </div>
+
+                <button type="submit" class="btn btn-primary" id="btn-create-task-submit">+ Dodaj zadanie do dziennika</button>
             </form>
         </div>
 
@@ -122,20 +304,43 @@ export function renderTasksTab(workspace, onRefresh) {
         </div>
     `;
 
+    // Wire creation form batch picker
+    const createSubmitBtn = container.querySelector('#btn-create-task-submit');
+    const newTaskPicker = wireBatchTagPicker(container, 'new-task', tagsCatalog, {
+        onChange: (count) => {
+            if (createSubmitBtn) {
+                createSubmitBtn.textContent =
+                    count > 0
+                        ? `+ Dodaj zadanie wraz z tagami (${count})`
+                        : '+ Dodaj zadanie do dziennika';
+            }
+        },
+    });
+
     const addTaskForm = container.querySelector('#add-task-form');
     if (addTaskForm) {
         addTaskForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const tytul = container.querySelector('#new-task-title').value.trim();
             if (!tytul) return;
+            const selectedTags = newTaskPicker ? newTaskPicker.getSelection() : [];
+            const batchNote = newTaskPicker ? newTaskPicker.getNote() : '';
+
             try {
                 await api.createTask(activeEvaluation.id, {
                     tytul,
                     opis: container.querySelector('#new-task-desc').value.trim(),
                     data_zdarzenia: container.querySelector('#new-task-date').value,
                     widocznosc: container.querySelector('#new-task-visibility').value,
+                    tags: selectedTags,
+                    komentarz: batchNote,
                 });
-                showToast('Dodano nowe zadanie. Możesz teraz przypisać do niego tagi.', 'success');
+                showToast(
+                    selectedTags.length > 0
+                        ? `Dodano zadanie wraz z ${selectedTags.length} tagami.`
+                        : 'Dodano nowe zadanie. Możesz teraz przypisać do niego tagi.',
+                    'success'
+                );
                 await onRefresh();
             } catch (err) {
                 showToast(err.message, 'error');
@@ -143,19 +348,54 @@ export function renderTasksTab(workspace, onRefresh) {
         });
     }
 
-    container.querySelectorAll('[data-add-tag]').forEach((btn) => {
+    // Wire per-task collapsible batch pickers
+    const taskPickers = new Map();
+    for (const t of tasks) {
+        const submitBtn = container.querySelector(`[data-submit-batch-tags="${t.id}"]`);
+        const picker = wireBatchTagPicker(container, `task-${t.id}`, tagsCatalog, {
+            onChange: (count) => {
+                if (submitBtn) {
+                    submitBtn.disabled = count === 0;
+                    submitBtn.textContent = `+ Przypisz zaznaczone tagi (${count})`;
+                }
+            },
+        });
+        if (picker) taskPickers.set(t.id, picker);
+    }
+
+    container.querySelectorAll('[data-toggle-batch-picker]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const taskId = Number(btn.dataset.toggleBatchPicker);
+            const panel = container.querySelector(`#batch-picker-panel-${taskId}`);
+            if (panel) panel.classList.toggle('hidden');
+        });
+    });
+
+    container.querySelectorAll('[data-cancel-batch-picker]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const taskId = Number(btn.dataset.cancelBatchPicker);
+            const panel = container.querySelector(`#batch-picker-panel-${taskId}`);
+            if (panel) panel.classList.add('hidden');
+        });
+    });
+
+    container.querySelectorAll('[data-submit-batch-tags]').forEach((btn) => {
         btn.addEventListener('click', async () => {
-            const taskId = Number(btn.dataset.addTag);
-            const tagId = Number(container.querySelector(`#tag-select-${taskId}`).value);
-            const polarity = container.querySelector(`#tag-polarity-${taskId}`).value;
-            const comment = container.querySelector(`#tag-comment-${taskId}`).value.trim();
+            const taskId = Number(btn.dataset.submitBatchTags);
+            const picker = taskPickers.get(taskId);
+            if (!picker) return;
+            const selectedTags = picker.getSelection();
+            if (selectedTags.length === 0) {
+                showToast('Zaznacz przynajmniej jeden tag przed zapisaniem.', 'error');
+                return;
+            }
+            const komentarz = picker.getNote();
             try {
-                await api.addTagToTask(taskId, {
-                    tag_id: tagId,
-                    polaryzacja: polarity,
-                    komentarz: comment,
+                await api.addTagsToTask(taskId, {
+                    tags: selectedTags,
+                    komentarz,
                 });
-                showToast('Przypisano tag do zadania.', 'success');
+                showToast(`Przypisano ${selectedTags.length} tagów do zadania.`, 'success');
                 await onRefresh();
             } catch (err) {
                 showToast(err.message, 'error');
