@@ -1,9 +1,15 @@
 {
-  "name": "node-postgres-api",
+  "name": "cyfrowy-asystent-ocen-okresowych",
   "version": "1.0.0",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "preview": "node preview-server.js",
+    "db:reset": "node db/reset.js",
+    "test:unit": "node --test test/legalRules.test.js",
+    "test:mock": "node --test test/mockApi.test.js",
+    "test:api": "node --test test/api.integration.test.js",
+    "test": "node --test test/*.test.js"
   },
   "dependencies": {
     "express": "^4.21.2",

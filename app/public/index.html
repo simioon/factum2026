@@ -1,138 +1,164 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pl">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Nginx + Node.js + PostgreSQL</title>
-  <style>
-    body {
-      font-family: system-ui, -apple-system, sans-serif;
-      max-width: 720px;
-      margin: 48px auto;
-      padding: 0 20px;
-      color: #1f2937;
-      background: #f9fafb;
-    }
-    .card {
-      background: #ffffff;
-      border: 1px solid #e5e7eb;
-      border-radius: 8px;
-      padding: 20px;
-      margin-bottom: 20px;
-    }
-    button {
-      background: #2563eb;
-      color: #ffffff;
-      border: none;
-      border-radius: 6px;
-      padding: 10px 16px;
-      font-size: 14px;
-      cursor: pointer;
-    }
-    button:hover {
-      background: #1d4ed8;
-    }
-    .status {
-      margin-top: 12px;
-      font-size: 14px;
-    }
-    .ok { color: #15803d; font-weight: 600; }
-    .err { color: #b91c1c; font-weight: 600; }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 16px;
-      font-size: 14px;
-    }
-    th, td {
-      text-align: left;
-      padding: 10px;
-      border-bottom: 1px solid #e5e7eb;
-    }
-    th {
-      background: #f3f4f6;
-    }
-  </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cyfrowy Asystent Ocen Okresowych — Służba Cywilna (HackNation 2026)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./css/styles.css">
 </head>
 <body>
-  <h1>Stack Connection &amp; Data Test</h1>
 
-  <div class="card">
-    <h2>1. Database Connection Test</h2>
-    <button id="testBtn">Test DB Connection</button>
-    <div id="dbStatus" class="status"></div>
-  </div>
+  <header class="topbar">
+    <div class="topbar-brand">
+      <span>Cyfrowy Asystent Ocen Okresowych</span>
+      <span class="badge-year">Służba Cywilna &bull; HackNation 2026</span>
+      <span id="mock-mode-badge" class="badge-year badge-mock hidden">Tryb podglądu UI (bez backendu)</span>
+    </div>
+    <div class="topbar-controls">
+      <label for="quick-role-select">Przełącz rolę (Demo):</label>
+      <select id="quick-role-select"></select>
+      <button id="btn-reset-mock" class="btn btn-sm hidden" type="button">Resetuj dane demo</button>
+      <button id="btn-logout" class="btn btn-sm hidden" type="button">Ekran startowy</button>
+    </div>
+  </header>
 
-  <div class="card">
-    <h2>2. Table Preview (First 5 Rows)</h2>
-    <button id="loadBtn">Show First 5 Rows</button>
-    <div id="tableContainer"></div>
-  </div>
+  <main id="app-main" class="container">
 
-  <script>
-    const testBtn = document.getElementById('testBtn');
-    const dbStatus = document.getElementById('dbStatus');
-    const loadBtn = document.getElementById('loadBtn');
-    const tableContainer = document.getElementById('tableContainer');
+    <section id="section-login">
+      <div class="card">
+        <h1>Cyfrowy Asystent Ocen Okresowych w Służbie Cywilnej</h1>
+        <p class="text-muted" style="margin-bottom: 18px;">
+          Wybierz jedną z ról demonstracyjnych poniżej (bez hasła), aby przetestować cały obieg oceny okresowej — od rozmowy wstępnej i dziennika tagów, przez zdarzenia kadrowe i kreator oceny ze „Split Screenem” uzasadnienia, aż po dwustronne e-podpisy i rozpatrywanie odwołań.
+        </p>
+        <div id="login-cards-grid" class="grid-4"></div>
+      </div>
+    </section>
 
-    testBtn.addEventListener('click', async () => {
-      dbStatus.textContent = 'Testing connection...';
-      dbStatus.className = 'status';
+    <section id="section-employee" class="hidden">
+      <div id="employee-view-content"></div>
+    </section>
 
-      try {
-        const res = await fetch('/api/test-db');
-        const data = await res.json();
+    <section id="section-manager" class="hidden">
+      <div class="tabs" id="manager-main-tabs">
+        <button class="tab-btn active" type="button" data-manager-tab="team">Moi podwładni i Alerty</button>
+        <button class="tab-btn" type="button" data-manager-tab="history">Wystawione oceny</button>
+        <button class="tab-btn" type="button" id="tab-btn-manager-self" data-manager-tab="self">Moje oceny (jako oceniany)</button>
+      </div>
 
-        if (!res.ok) throw new Error(data.error || 'Connection failed');
+      <div id="manager-subview-team"></div>
+      <div id="manager-subview-history" class="hidden"></div>
+      <div id="manager-subview-self" class="hidden"></div>
 
-        dbStatus.className = 'status ok';
-        dbStatus.textContent = `Connected! Server time: ${data.server_time} (${data.pg_version.split(',')[0]})`;
-      } catch (err) {
-        dbStatus.className = 'status err';
-        dbStatus.textContent = `Connection failed: ${err.message}`;
-      }
-    });
+      <div id="manager-subview-profile" class="hidden">
+        <div style="margin-bottom: 12px;">
+          <button class="btn btn-sm" id="btn-close-profile" type="button">&larr; Powrót do listy podwładnych</button>
+        </div>
+        <div id="profile-header-card" class="card"></div>
 
-    loadBtn.addEventListener('click', async () => {
-      tableContainer.textContent = 'Loading rows...';
+        <div class="tabs" id="profile-tabs">
+          <button class="tab-btn active" type="button" data-profile-tab="setup">A) Rozmowa wstępna, kryteria i zdarzenia kadrowe</button>
+          <button class="tab-btn" type="button" data-profile-tab="tasks">B) Dziennik zadań i tagów</button>
+          <button class="tab-btn" type="button" data-profile-tab="wizard">C) Proces oceny końcowej (Kreator)</button>
+        </div>
 
-      try {
-        const res = await fetch('/api/items');
-        const data = await res.json();
+        <div id="profile-tab-setup"></div>
+        <div id="profile-tab-tasks" class="hidden"></div>
+        <div id="profile-tab-wizard" class="hidden"></div>
+      </div>
+    </section>
 
-        if (!res.ok) throw new Error(data.error || 'Failed to load rows');
+    <section id="section-director" class="hidden">
+      <div class="tabs" id="director-main-tabs">
+        <button class="tab-btn active" type="button" data-director-tab="requests">Odwołania i Wnioski o stopień</button>
+        <button class="tab-btn" type="button" data-director-tab="team">Moi podwładni (Oceny)</button>
+      </div>
 
-        const table = document.createElement('table');
-        const thead = document.createElement('thead');
-        const headerRow = document.createElement('tr');
+      <div id="director-subview-requests"></div>
+      <div id="director-subview-team" class="hidden">
+        <p class="text-muted" style="margin-bottom: 12px;">
+          Jako Dyrektor Generalny oceniasz bezpośrednio podległych kierowników (sam nie podlegasz ocenie w tym systemie).
+        </p>
+        <div id="director-team-mount"></div>
+      </div>
+    </section>
 
-        ['ID', 'Name', 'Category', 'Created At'].forEach((heading) => {
-          const th = document.createElement('th');
-          th.textContent = heading;
-          headerRow.appendChild(th);
-        });
-        thead.appendChild(headerRow);
-        table.appendChild(thead);
+    <section id="section-admin" class="hidden">
+      <div class="card">
+        <div class="card-header">
+          <h2>Dodaj nowego użytkownika</h2>
+          <span class="badge badge-primary">Panel Admina</span>
+        </div>
+        <form id="admin-add-user-form">
+          <div class="grid-2">
+            <div class="form-group">
+              <label for="new-name">Imię i nazwisko</label>
+              <input type="text" id="new-name" placeholder="np. Katarzyna Kaczmarek" required>
+            </div>
+            <div class="form-group">
+              <label for="new-email">Adres e-mail (opcjonalnie — wygeneruje się automatycznie)</label>
+              <input type="text" id="new-email" placeholder="np. katarzyna.kaczmarek@urzad.gov.pl">
+            </div>
+            <div class="form-group">
+              <label for="new-position">Nazwa stanowiska</label>
+              <input type="text" id="new-position" placeholder="np. Główny Specjalista ds. Prawnych" required>
+            </div>
+            <div class="form-group">
+              <label for="new-department">Komórka organizacyjna</label>
+              <input type="text" id="new-department" placeholder="np. Departament Prawny" value="Wydział Analiz i Sprawozdawczości">
+            </div>
+            <div class="form-group">
+              <label for="new-sheet-type">Typ stanowiska (automatyczny dobór arkusza)</label>
+              <select id="new-sheet-type">
+                <option value="C">Stanowisko nie-kierownicze (Arkusz C)</option>
+                <option value="B">Bezpośrednie kierowanie pracownikami (Arkusz B)</option>
+                <option value="A">Kierownik urzędu w służbie cywilnej (Arkusz A)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="new-role">Rola w systemie</label>
+              <select id="new-role">
+                <option value="OCENIANY">Oceniany (Pracownik)</option>
+                <option value="OCENIAJACY">Oceniający (Manager / Naczelnik)</option>
+                <option value="DYREKTOR">Dyrektor Generalny</option>
+                <option value="ADMIN">Administrator</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="new-employment">Status zatrudnienia</label>
+              <select id="new-employment">
+                <option value="UMOWA_NIEOKRESLONA">Pracownik SC (umowa na czas nieokreślony)</option>
+                <option value="MIANOWANIE">Urzędnik SC (mianowanie)</option>
+              </select>
+            </div>
+            <div class="form-group hidden" id="new-rank-group">
+              <label for="new-rank">Stopień służbowy (1–9)</label>
+              <input type="number" id="new-rank" min="1" max="9" value="1">
+            </div>
+            <div class="form-group">
+              <label for="new-evaluator">Przypisany przełożony (oceniający)</label>
+              <select id="new-evaluator"></select>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary">Dodaj użytkownika do systemu</button>
+        </form>
+      </div>
 
-        const tbody = document.createElement('tbody');
-        data.rows.forEach((row) => {
-          const tr = document.createElement('tr');
-          [row.id, row.name, row.category, new Date(row.created_at).toLocaleString()].forEach((val) => {
-            const td = document.createElement('td');
-            td.textContent = val;
-            tr.appendChild(td);
-          });
-          tbody.appendChild(tr);
-        });
-        table.appendChild(tbody);
+      <div class="card">
+        <div class="card-header">
+          <h2>Lista użytkowników i struktura podległości</h2>
+        </div>
+        <div class="table-wrap" id="admin-users-table"></div>
+      </div>
+    </section>
 
-        tableContainer.innerHTML = '';
-        tableContainer.appendChild(table);
-      } catch (err) {
-        tableContainer.className = 'status err';
-        tableContainer.textContent = `Error: ${err.message}`;
-      }
-    });
-  </script>
+  </main>
+
+  <div id="print-sheet-area"></div>
+  <div id="toast-container"></div>
+
+  <script type="module" src="./js/main.js"></script>
 </body>
 </html>
