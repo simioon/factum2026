@@ -274,7 +274,48 @@ test('Full end-to-end evaluation, HR events, visibility, appeals, and rank workf
         assert.equal(decideRes.data.newEvaluation.status, 'PRZED_ROZMOWA_OCENIAJACA');
     });
 
-    await t.test('9. Director approves Jan Kowalski pending FAKULTATYWNY rank request (IV -> V)', async () => {
+    await t.test('9. Director requests correction -> evaluator can identify it for notification', async () => {
+        const ws = await apiReq(`/api/users/${tomasz.id}/workspace`, { userId: jan.id });
+        const evalId = ws.data.activeEvaluation.id;
+        const scores = Object.fromEntries(ws.data.activeEvaluation.criteria.map((c) => [c.kryterium_id, 7]));
+
+        const finalized = await apiReq(`/api/evaluations/${evalId}/finalize`, {
+            method: 'POST',
+            userId: jan.id,
+            body: { scores, uzasadnienie_oceny: 'Wyniki zgodne z oczekiwaniami.' },
+        });
+        assert.equal(finalized.status, 200);
+        const acknowledged = await apiReq(`/api/evaluations/${evalId}/acknowledge`, {
+            method: 'POST',
+            userId: tomasz.id,
+        });
+        assert.equal(acknowledged.status, 200);
+        assert.equal(acknowledged.data.evaluation.status, 'ZAKONCZONA');
+
+        const appeal = await apiReq(`/api/evaluations/${evalId}/appeals`, {
+            method: 'POST',
+            userId: tomasz.id,
+            body: { uzasadnienie_pracownika: 'Wnoszę o zmianę oceny.' },
+        });
+        assert.equal(appeal.status, 201);
+        const decision = await apiReq(`/api/appeals/${appeal.data.appeal.id}/decide`, {
+            method: 'PATCH',
+            userId: marek.id,
+            body: {
+                decyzja_dyrektora: 'UWZGLEDNIONY_ZMIANA',
+                uzasadnienie_decyzji: 'Proszę poprawić punktację.',
+            },
+        });
+        assert.equal(decision.status, 200);
+        assert.equal(decision.data.evaluation.status, 'PRZED_ROZMOWA_OCENIAJACA');
+
+        const evaluatorAppeals = await apiReq('/api/appeals', { userId: jan.id });
+        const correction = evaluatorAppeals.data.appeals.find((item) => item.id === appeal.data.appeal.id);
+        assert.equal(correction.evaluation_status, 'PRZED_ROZMOWA_OCENIAJACA');
+        assert.equal(correction.oceniajacy_id, jan.id);
+    });
+
+    await t.test('10. Director approves Jan Kowalski pending FAKULTATYWNY rank request (IV -> V)', async () => {
         const rrList = await apiReq('/api/rank-requests', { userId: marek.id });
         assert.equal(rrList.status, 200);
         const pending = rrList.data.rankRequests.find(

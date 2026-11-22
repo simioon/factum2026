@@ -9,7 +9,6 @@ const {
     todayIso,
     addDaysIso,
     diffDaysIso,
-    calculateFinalResult,
 } = require('../domain/legalRules');
 
 const router = express.Router();
@@ -47,6 +46,7 @@ router.get(
                 oo.srednia_punktow,
                 oo.wynik_ogolny,
                 oo.data_zapoznania_z_ocena,
+                oo.status AS evaluation_status,
                 p.imie_nazwisko AS pracownik_nazwa,
                 p.nazwa_stanowiska AS pracownik_stanowisko,
                 o.imie_nazwisko AS oceniajacy_nazwa
@@ -159,13 +159,7 @@ router.patch(
             throw new HttpError(400, 'Nieprawidłowe ID odwołania.');
         }
 
-        const {
-            decyzja_dyrektora,
-            uzasadnienie_decyzji = '',
-            amendedScores = null,
-            amendedJustification = null,
-            amendedIprz = null,
-        } = req.body || {};
+        const { decyzja_dyrektora, uzasadnienie_decyzji = '' } = req.body || {};
 
         if (!APPEAL_DECISIONS.has(decyzja_dyrektora)) {
             throw new HttpError(
@@ -211,58 +205,18 @@ router.patch(
                 );
                 updatedOldEval = resEval.rows[0];
             } else if (decyzja_dyrektora === 'UWZGLEDNIONY_ZMIANA') {
-                let nextAvg = oldEval.srednia_punktow;
-                let nextLevel = oldEval.poziom_oceny;
-                let nextResult = oldEval.wynik_ogolny;
-
-                if (amendedScores && typeof amendedScores === 'object' && Object.keys(amendedScores).length > 0) {
-                    const critRows = (
-                        await client.query(
-                            'SELECT kryterium_id, punkty FROM ocena_kryteria_wyniki WHERE ocena_id = $1;',
-                            [oldEval.id]
-                        )
-                    ).rows;
-
-                    const finalScoreValues = [];
-                    for (const row of critRows) {
-                        const overrideVal =
-                            amendedScores[row.kryterium_id] ?? amendedScores[String(row.kryterium_id)];
-                        const finalVal = overrideVal !== undefined ? Number(overrideVal) : Number(row.punkty);
-                        finalScoreValues.push(finalVal);
-                        if (overrideVal !== undefined) {
-                            await client.query(
-                                'UPDATE ocena_kryteria_wyniki SET punkty = $1 WHERE ocena_id = $2 AND kryterium_id = $3;',
-                                [finalVal, oldEval.id, row.kryterium_id]
-                            );
-                        }
-                    }
-
-                    const calc = calculateFinalResult(finalScoreValues);
-                    nextAvg = calc.srednia_punktow;
-                    nextLevel = calc.poziom_oceny;
-                    nextResult = calc.wynik_ogolny;
-                }
-
+                // Cofnięcie oceny do oceniającego w celu naniesienia poprawki
                 const resEval = await client.query(
                     `UPDATE oceny_okresowe
                      SET
-                        status = 'ZAKONCZONA',
-                        srednia_punktow = $1,
-                        poziom_oceny = $2,
-                        wynik_ogolny = $3,
-                        uzasadnienie_oceny = COALESCE($4, uzasadnienie_oceny),
-                        wnioski_iprz = COALESCE($5, wnioski_iprz),
+                        status = 'PRZED_ROZMOWA_OCENIAJACA',
+                        podpis_ocena_oceniajacy_at = NULL,
+                        podpis_ocena_oceniany_at = NULL,
+                        data_zapoznania_z_ocena = NULL,
                         updated_at = CURRENT_TIMESTAMP
-                     WHERE id = $6
+                     WHERE id = $1
                      RETURNING *;`,
-                    [
-                        nextAvg,
-                        nextLevel,
-                        nextResult,
-                        amendedJustification ? String(amendedJustification).trim() : null,
-                        amendedIprz ? String(amendedIprz).trim() : null,
-                        oldEval.id,
-                    ]
+                    [oldEval.id]
                 );
                 updatedOldEval = resEval.rows[0];
             } else {
