@@ -236,7 +236,7 @@ const TAGS_CATALOG = [
     { id: 8, nazwa: 'Inicjatywa I Innowacja', opis: 'nowe pomysły', kategoria: 'KOMPETENCYJNY', criteriaIds: [2, 5, 10] },
     { id: 9, nazwa: 'Analiza I Ryzyko', opis: 'wnioski/ryzyko', kategoria: 'KOMPETENCYJNY', criteriaIds: [9, 6, 14] },
     { id: 10, nazwa: 'Decyzyjność', opis: 'odpowiedzialność', kategoria: 'KOMPETENCYJNY', criteriaIds: [6, 7] },
-    { id: 11, nazwa: 'RozwójIWiedza', opis: 'szkolenia/technologia', kategoria: 'KOMPETENCYJNY', criteriaIds: [10, 11] },
+    { id: 11, nazwa: 'Rozwój I Wiedza', opis: 'szkolenia/technologia', kategoria: 'KOMPETENCYJNY', criteriaIds: [10, 11] },
     { id: 12, nazwa: 'Delegowanie I Monitoring', opis: 'podział zadań', kategoria: 'KOMPETENCYJNY', criteriaIds: [13, 4] },
     { id: 13, nazwa: 'Motywowanie I Feedback', opis: 'rozwój zespołu', kategoria: 'KOMPETENCYJNY', criteriaIds: [13] },
     { id: 14, nazwa: 'Wizja I Strategia', opis: 'cele strategiczne', kategoria: 'KOMPETENCYJNY', criteriaIds: [14, 3] },
