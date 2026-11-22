@@ -1,6 +1,12 @@
 import { api } from '../api.js';
 import { state } from '../state.js';
-import { escapeHtml, formatDate, formatDateTime, showToast } from '../utils.js';
+import {
+    escapeHtml,
+    formatDate,
+    formatDateTime,
+    renderPreviousEvaluationCheatSheetHtml,
+    showToast,
+} from '../utils.js';
 
 export function renderSetupTab(workspace, onRefresh) {
     const container = document.getElementById('profile-tab-setup');
@@ -84,8 +90,10 @@ export function renderSetupTab(workspace, onRefresh) {
             : '<p class="text-muted">Brak zarejestrowanych zdarzeń kadrowych w tym cyklu.</p>';
 
     const readOnlySetup = activeEvaluation.status === 'SPORZADZONA_DO_PODPISU';
+    const prevSummaryHtml = renderPreviousEvaluationCheatSheetHtml(pastEvaluations);
 
     container.innerHTML = `
+        ${prevSummaryHtml}
         <div class="card">
             <h3>Rozmowa wstępna i wyznaczenie kryteriów (Część I arkusza)</h3>
             <div class="alert-box ${isAfterNeg ? 'alert-negative' : 'alert-info'}">
