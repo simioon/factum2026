@@ -204,11 +204,20 @@ function resolveRankRequest(evaluation, explicitRequest) {
     return null;
 }
 
-function buildCriteriaPartitions(evaluation, config) {
-    const rawCriteria = (evaluation.criteria || []).map((c) => {
+export function buildCriteriaPartitions(evaluation, config, sheetTypeOverride = null) {
+    const sheetType = sheetTypeOverride || (evaluation && evaluation.typ_arkusza) || 'C';
+    const sheetConfig = config || SHEET_CONFIG[sheetType] || SHEET_CONFIG.C;
+    const legalCfg = (state.dictionaries && state.dictionaries.legalConfig) || {};
+    const maxAdditional = Number.isInteger(legalCfg.maxAdditionalCriteria) ? legalCfg.maxAdditionalCriteria : 3;
+    const sheetDict =
+        state.dictionaries && state.dictionaries.sheetCriteria && state.dictionaries.sheetCriteria[sheetType];
+    const dictMandatoryIds = sheetDict && Array.isArray(sheetDict.mandatoryIds) ? sheetDict.mandatoryIds : [];
+
+    const rawCriteria = ((evaluation && evaluation.criteria) || []).map((c) => {
         const dictItem = getCriterionById(c.kryterium_id);
         const name = c.nazwa || (dictItem ? dictItem.nazwa : `Kryterium #${c.kryterium_id}`);
         return {
+            kryterium_id: c.kryterium_id,
             nazwa: name,
             punkty: c.punkty !== null && c.punkty !== undefined ? Number(c.punkty) : null,
             typ_kryterium: c.typ_kryterium || null,
@@ -216,19 +225,47 @@ function buildCriteriaPartitions(evaluation, config) {
         };
     });
 
-    const mandatoryRows = config.mandatoryCriteria.map((officialName) => {
-        const targetNorm = normalizeText(officialName);
-        const match = rawCriteria.find((item) => !item.used && normalizeText(item.nazwa) === targetNorm);
-        if (match) {
-            match.used = true;
-            return { nazwa: officialName, punkty: match.punkty };
-        }
-        return { nazwa: officialName, punkty: null };
-    });
+    const hasExplicitTypes = rawCriteria.some((item) => item.typ_kryterium === 'OBOWIAZKOWE');
+    let mandatoryRows = [];
 
-    const extraFound = rawCriteria.filter((item) => !item.used).slice(0, 3);
+    if (hasExplicitTypes) {
+        // Dynamic path: reflects Admin-edited / newly added mandatory criteria immediately
+        mandatoryRows = rawCriteria
+            .filter((item) => item.typ_kryterium === 'OBOWIAZKOWE')
+            .map((item) => {
+                item.used = true;
+                return { nazwa: item.nazwa, punkty: item.punkty };
+            });
+    } else if (rawCriteria.length > 0 && dictMandatoryIds.length > 0) {
+        const mandSet = new Set(dictMandatoryIds);
+        mandatoryRows = rawCriteria
+            .filter((item) => mandSet.has(item.kryterium_id))
+            .map((item) => {
+                item.used = true;
+                return { nazwa: item.nazwa, punkty: item.punkty };
+            });
+    } else if (rawCriteria.length === 0 && dictMandatoryIds.length > 0) {
+        mandatoryRows = dictMandatoryIds.map((id) => {
+            const dictItem = getCriterionById(id);
+            return { nazwa: dictItem ? dictItem.nazwa : `Kryterium #${id}`, punkty: null };
+        });
+    } else {
+        // Fallback for standalone objects without typ_kryterium or dictionaries
+        mandatoryRows = sheetConfig.mandatoryCriteria.map((officialName) => {
+            const targetNorm = normalizeText(officialName);
+            const match = rawCriteria.find((item) => !item.used && normalizeText(item.nazwa) === targetNorm);
+            if (match) {
+                match.used = true;
+                return { nazwa: match.nazwa, punkty: match.punkty };
+            }
+            return { nazwa: officialName, punkty: null };
+        });
+    }
+
+    const extraFound = rawCriteria.filter((item) => !item.used);
+    const slotCount = Math.max(maxAdditional, extraFound.length);
     const additionalRows = [];
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < slotCount; i++) {
         if (extraFound[i]) {
             additionalRows.push({ nazwa: extraFound[i].nazwa, punkty: extraFound[i].punkty });
         } else {
@@ -551,7 +588,13 @@ export function printEvaluationSheet({
     const evalDepartment =
         (resolvedEvaluator && resolvedEvaluator.komorka_organizacyjna) || evaluation.oceniajacy_komorka || '';
 
-    const { mandatoryRows, additionalRows } = buildCriteriaPartitions(evaluation, config);
+    const { mandatoryRows, additionalRows } = buildCriteriaPartitions(evaluation, config, sheetType);
+    const appealDaysLimit =
+        (state.dictionaries && state.dictionaries.legalConfig && state.dictionaries.legalConfig.appealDaysLimit) || 7;
+    const dynamicPouczenieHtml = config.pouczenieHtml.replace(
+        /w terminie \d+ dni/i,
+        `w terminie ${appealDaysLimit} dni`
+    );
 
     const plannedDateText = formatDatePl(evaluation.planowana_data_oceny);
     const part1EvalSignDate = formatDatePl(
@@ -1012,7 +1055,7 @@ export function printEvaluationSheet({
 
             <div class="gov-pouczenie">
                 <div class="gov-pouczenie-title">Pouczenie</div>
-                <div>${config.pouczenieHtml}</div>
+                <div>${dynamicPouczenieHtml}</div>
             </div>
 
             <div class="gov-footnotes">

@@ -19,8 +19,10 @@ services:
     environment:
       PORT: 3000
       DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      SEED_DEMO_DATA: ${SEED_DEMO_DATA:-true}
     volumes:
       - ./app/public:/usr/src/app/public:ro
+      - app_data:/usr/src/app/data
     depends_on:
       db:
         condition: service_healthy
@@ -43,3 +45,4 @@ services:
 
 volumes:
   pg_data:
+  app_data:

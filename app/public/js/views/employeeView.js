@@ -10,7 +10,14 @@ export function renderEmployeePanel(workspace, targetElementId, onRefresh) {
     const { user, evaluator, activeEvaluation, pastEvaluations } = workspace;
     const lastCompleted = pastEvaluations.find((e) => e.status === 'ZAKONCZONA') || null;
     const isAfterNegative = lastCompleted && lastCompleted.wynik_ogolny === 'NEGATYWNA';
-    const criteriaLimitDays = isAfterNegative ? 7 : 30;
+    const legalCfg = (state.dictionaries && state.dictionaries.legalConfig) || {};
+    const normalDays = legalCfg.initialInterviewDaysNormal ?? 30;
+    const afterNegDays = legalCfg.initialInterviewDaysAfterNegative ?? 7;
+    const criteriaLimitDays = isAfterNegative ? afterNegDays : normalDays;
+    const standardCycleMonths = legalCfg.cycleMonths ?? 24;
+    const afterNegCycleMonths = legalCfg.cycleMonthsAfterNegative ?? 6;
+    const appealDaysLimit = legalCfg.appealDaysLimit ?? 7;
+    const appealReviewDaysLimit = legalCfg.appealReviewDaysLimit ?? 14;
 
     const isInitialTalkDone = Boolean(activeEvaluation && activeEvaluation.data_rozmowy_wstepnej);
     const previousEvalWithCriteria =
@@ -166,13 +173,13 @@ export function renderEmployeePanel(workspace, targetElementId, onRefresh) {
                         <div class="alert-box alert-warning" style="margin-top:10px;">
                             <strong>Status odwołania (sprzeciwu):</strong> ${escapeHtml(statusLabel)}
                             ${latestAppeal.uzasadnienie_decyzji ? `<br><em>Decyzja Dyrektora:</em> ${escapeHtml(latestAppeal.uzasadnienie_decyzji)}` : ''}
-                            <br><span class="text-muted" style="font-size:12px;">Złożono: ${escapeHtml(formatDate(latestAppeal.data_zlozenia))} &bull; Termin rozpatrzenia (14 dni): ${escapeHtml(formatDate(latestAppeal.termin_rozpatrzenia))}</span>
+                            <br><span class="text-muted" style="font-size:12px;">Złożono: ${escapeHtml(formatDate(latestAppeal.data_zlozenia))} &bull; Termin rozpatrzenia (${appealReviewDaysLimit} dni): ${escapeHtml(formatDate(latestAppeal.termin_rozpatrzenia))}</span>
                         </div>
                     `;
                 } else if (ev.status === 'ZAKONCZONA') {
                     appealBlock = `
                         <div style="margin-top:10px;">
-                            <button type="button" class="btn btn-sm" data-toggle-appeal="${ev.id}">Złóż odwołanie (sprzeciw — 7 dni)</button>
+                            <button type="button" class="btn btn-sm" data-toggle-appeal="${ev.id}">Złóż odwołanie (sprzeciw — ${appealDaysLimit} dni)</button>
                             <div id="appeal-form-${ev.id}" class="hidden" style="margin-top:10px; padding:12px; background:var(--bg-subtle); border-radius:6px;">
                                 <div class="form-group">
                                     <label for="appeal-text-${ev.id}">Uzasadnienie sprzeciwu do Dyrektora Generalnego:</label>
@@ -221,7 +228,9 @@ export function renderEmployeePanel(workspace, targetElementId, onRefresh) {
     const hrNote =
         hrEventsCount > 0
             ? ` (uwzględnia ${hrEventsCount} zdarzeń kadrowych)`
-            : ' (standardowo 24 miesiące)';
+            : isAfterNegative
+              ? ` (skrócony cykl: ${afterNegCycleMonths} mies.)`
+              : ` (standardowo ${standardCycleMonths} mies.)`;
 
     container.innerHTML = `
         <div class="card">
@@ -238,7 +247,7 @@ export function renderEmployeePanel(workspace, targetElementId, onRefresh) {
                     <p style="margin-top:6px;"><strong>Status zatrudnienia:</strong> ${rankText}</p>
                 </div>
                 <div>
-                    <p><strong>Terminu rozmowy wstępnej:</strong> ${isAfterNegative ? '<span class="badge badge-negative">7 dni (po ocenie negatywnej)</span>' : '<span class="badge badge-positive">30 dni (tryb standardowy)</span>'}</p>
+                    <p><strong>Termin rozmowy wstępnej:</strong> ${isAfterNegative ? `<span class="badge badge-negative">${afterNegDays} dni (po ocenie negatywnej)</span>` : `<span class="badge badge-positive">${normalDays} dni (tryb standardowy)</span>`}</p>
                     ${activeEvaluation ? `<p style="margin-top:6px;"><strong>Status bieżącego cyklu:</strong> <span class="badge badge-primary">${escapeHtml(activeEvaluation.status_label)}</span></p>` : ''}
                 </div>
             </div>
@@ -361,7 +370,7 @@ export function renderEmployeePanel(workspace, targetElementId, onRefresh) {
             try {
                 const res = await api.createAppeal(evalId, { uzasadnienie_pracownika: reason });
                 const warn = res.appeal.po_terminie_ustawowym
-                    ? ' (Uwaga: złożono po upływie 7 dni od zapoznania — tryb demo)'
+                    ? ` (Uwaga: złożono po upływie ${appealDaysLimit} dni od zapoznania — tryb demo)`
                     : '';
                 showToast(`Sprzeciw wysłany do Dyrektora Generalnego.${warn}`, 'success');
                 await onRefresh();

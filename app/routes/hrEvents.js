@@ -3,7 +3,7 @@ const { query, withTransaction } = require('../db/pool');
 const { requireUser } = require('../middleware/demoAuth');
 const { HttpError, asyncHandler } = require('../middleware/errorHandler');
 const { assertCanViewEvaluation, assertCanEvaluate } = require('../db/evaluationService');
-const { diffDaysIso } = require('../domain/legalRules');
+const { LEGAL_CONFIG, diffDaysIso } = require('../domain/legalRules');
 
 const router = express.Router();
 
@@ -76,7 +76,7 @@ router.post(
                 throw new HttpError(400, 'Data zakończenia nie może być wcześniejsza niż data rozpoczęcia.');
             }
             const inclusiveDays = duration + 1;
-            shiftDays = inclusiveDays > 30 ? inclusiveDays : 0;
+            shiftDays = inclusiveDays > LEGAL_CONFIG.absenceShiftThresholdDays ? inclusiveDays : 0;
         } else {
             shiftDays = 0;
         }

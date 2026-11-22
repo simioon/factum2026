@@ -37,7 +37,7 @@
 }
 
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   background-color: var(--bg-page);
   color: var(--text-main);
   line-height: 1.5;
@@ -72,12 +72,6 @@ body {
   padding: 2px 8px;
   border-radius: 99px;
   font-weight: 500;
-}
-
-.topbar-brand span.badge-mock {
-  background: #d97706;
-  color: #ffffff;
-  font-weight: 600;
 }
 
 .topbar-controls {
@@ -500,17 +494,6 @@ th {
 .tag-row.neg { background: var(--negative-bg); border: 1px solid var(--negative-border); }
 .tag-row.wellbeing { background: var(--wellbeing-bg); border: 1px solid var(--wellbeing-border); }
 
-.inline-tag-form {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 10px;
-  padding-top: 10px;
-  border-top: 1px dashed var(--border-color);
-}
-.inline-tag-form select { flex: 1 1 170px; }
-.inline-tag-form input[type="text"] { flex: 2 1 200px; }
-
 .task-batch-toggle-row {
   margin-top: 10px;
   padding-top: 10px;
@@ -739,13 +722,6 @@ th {
   border-radius: var(--radius);
   padding: 14px;
   background: var(--bg-subtle);
-}
-
-.draft-btn-group {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin: 8px 0 10px;
 }
 
 .evidence-filters {

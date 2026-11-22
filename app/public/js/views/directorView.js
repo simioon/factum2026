@@ -21,6 +21,8 @@ export function renderDirectorPanel(directorUser, callbacks) {
 
     subReq.classList.remove('hidden');
 
+    const appealDaysLimit =
+        (state.dictionaries && state.dictionaries.legalConfig && state.dictionaries.legalConfig.appealDaysLimit) || 7;
     const appeals = state.appeals || [];
     const appealsHtml =
         appeals.length === 0
@@ -52,7 +54,7 @@ export function renderDirectorPanel(directorUser, callbacks) {
                                 Oceniający: ${escapeHtml(ap.oceniajacy_nazwa)} &bull;
                                 Data złożenia: ${escapeHtml(formatDate(ap.data_zlozenia))} &bull;
                                 Termin rozpatrzenia: ${escapeHtml(formatDate(ap.termin_rozpatrzenia))}
-                                ${ap.po_terminie_ustawowym ? ' <span class="badge badge-negative">Złożono po 7 dniach (Demo)</span>' : ''}
+                                ${ap.po_terminie_ustawowym ? ` <span class="badge badge-negative">Złożono po ${appealDaysLimit} dniach (Demo)</span>` : ''}
                             </p>
                             <p style="margin-top:6px;"><strong>Treść sprzeciwu:</strong> ${escapeHtml(ap.uzasadnienie_pracownika)}</p>
                             ${actionHtml}

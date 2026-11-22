@@ -1,4 +1,4 @@
-import { api, detectApiMode, isMockMode, resetMockDemoData } from './api.js';
+import { api } from './api.js';
 import { resetWizardState, setCurrentUserId, state } from './state.js';
 import { getUserById, showToast } from './utils.js';
 import { renderLoginScreen, renderTopbarSwitcher } from './views/loginView.js';
@@ -134,14 +134,16 @@ async function loadAndRender() {
         }
 
         if (user.rola === 'ADMIN') {
-            const [dictRes, tagsRes, critRes] = await Promise.all([
+            const [dictRes, tagsRes, critRes, legalRes] = await Promise.all([
                 api.getDictionaries(),
                 api.getAdminTags(),
                 api.getAdminCriteria(),
+                api.getLegalConfig(),
             ]);
             state.dictionaries = dictRes;
             state.adminTags = tagsRes.tags;
             state.adminCriteria = critRes.criteria;
+            state.adminLegalDefaults = legalRes.defaults;
             document.getElementById('section-admin').classList.remove('hidden');
             renderAdminPanel(loadAndRender);
         }
@@ -197,24 +199,30 @@ function bindStaticNavigation() {
 
 window.addEventListener('DOMContentLoaded', async () => {
     try {
-        await detectApiMode();
-        if (isMockMode()) {
-            const badge = document.getElementById('mock-mode-badge');
-            const btnReset = document.getElementById('btn-reset-mock');
-            if (badge) badge.classList.remove('hidden');
+        const health = await api.getHealth();
+        if (health && health.demoMode) {
+            const btnReset = document.getElementById('btn-reset-demo');
             if (btnReset) {
                 btnReset.classList.remove('hidden');
                 btnReset.addEventListener('click', async () => {
-                    resetMockDemoData();
-                    state.selectedEmployeeId = null;
-                    state.editingTagId = null;
-                    state.editingCriterionId = null;
-                    state.workspace = null;
-                    state.selfWorkspace = null;
-                    resetWizardState();
-                    await loadUsersAndDictionaries();
-                    await loadAndRender();
-                    showToast('Przywrócono początkowe dane demonstracyjne (tryb lokalny).', 'success');
+                    btnReset.disabled = true;
+                    try {
+                        await api.resetDemoData();
+                        setCurrentUserId(null);
+                        state.selectedEmployeeId = null;
+                        state.editingTagId = null;
+                        state.editingCriterionId = null;
+                        state.workspace = null;
+                        state.selfWorkspace = null;
+                        resetWizardState();
+                        await loadUsersAndDictionaries();
+                        await loadAndRender();
+                        showToast('Przywrócono początkowe dane demonstracyjne w bazie PostgreSQL.', 'success');
+                    } catch (err) {
+                        showToast(err.message, 'error');
+                    } finally {
+                        btnReset.disabled = false;
+                    }
                 });
             }
         }

@@ -578,10 +578,33 @@ async function seedDemoData(client) {
     console.log('Seeded 5 demo users, evaluations, active cycles, 6 tasks, 17 tags, and 1 rank request.');
 }
 
+async function seedBootstrapAdmin(client) {
+    const { rows } = await client.query('SELECT COUNT(*)::int AS cnt FROM uzytkownicy;');
+    if (rows[0].cnt > 0) return;
+
+    const adminName = String(process.env.BOOTSTRAP_ADMIN_NAME || 'Administrator Systemu').trim();
+    const adminEmail = String(process.env.BOOTSTRAP_ADMIN_EMAIL || 'admin@urzad.gov.pl').trim().toLowerCase();
+
+    await client.query(
+        `INSERT INTO uzytkownicy (
+            imie_nazwisko, email, arkusz, rola, haslo_hash, aktualny_stopien_sluzbowy,
+            nazwa_stanowiska, komorka_organizacyjna, przelozony_id
+        ) VALUES ($1, $2, NULL, 'ADMIN', 'DEMO_NO_PASSWORD_AUTH', 0, $3, $4, NULL);`,
+        [adminName, adminEmail, 'Administrator Systemu', 'Biuro Informatyki / Kadry']
+    );
+
+    console.log(`SEED_DEMO_DATA=false: seeded dictionaries and bootstrap ADMIN account (${adminEmail}).`);
+}
+
 async function seedIfEmpty() {
+    const seedDemo = String(process.env.SEED_DEMO_DATA || 'true').toLowerCase() !== 'false';
     await withTransaction(async (client) => {
         await seedDictionaries(client);
-        await seedDemoData(client);
+        if (seedDemo) {
+            await seedDemoData(client);
+        } else {
+            await seedBootstrapAdmin(client);
+        }
     });
 }
 

@@ -32,6 +32,7 @@ test('Full end-to-end evaluation, HR events, visibility, appeals, and rank workf
         const health = await apiReq('/api/health');
         assert.equal(health.status, 200);
         assert.equal(health.data.status, 'ok');
+        assert.equal(health.data.demoMode, true);
 
         const dictRes = await apiReq('/api/dictionaries');
         assert.equal(dictRes.status, 200);
@@ -682,5 +683,58 @@ test('Full end-to-end evaluation, HR events, visibility, appeals, and rank workf
             body: { tag_id: tagId, polaryzacja: '+', komentarz: 'Po przywróceniu tagu' },
         });
         assert.equal(assignRestored.status, 201);
+    });
+
+    await t.test('13. Admin legal config: update statutory parameters live & reset to defaults', async () => {
+        // Non-admin rejected
+        const forbidden = await apiReq('/api/legal-config', { userId: jan.id });
+        assert.equal(forbidden.status, 403);
+
+        // Out-of-bounds rejected
+        const invalid = await apiReq('/api/legal-config', {
+            method: 'PUT',
+            userId: admin.id,
+            body: { cycleMonths: 0 },
+        });
+        assert.equal(invalid.status, 400);
+
+        // Update maxAdditionalCriteria to 4 and cycleMonths to 12
+        const updated = await apiReq('/api/legal-config', {
+            method: 'PUT',
+            userId: admin.id,
+            body: {
+                cycleMonths: 12,
+                maxAdditionalCriteria: 4,
+                appealDaysLimit: 10,
+                absenceShiftThresholdDays: 14,
+            },
+        });
+        assert.equal(updated.status, 200);
+        assert.equal(updated.data.legalConfig.cycleMonths, 12);
+        assert.equal(updated.data.legalConfig.maxAdditionalCriteria, 4);
+
+        const dictUpdated = await apiReq('/api/dictionaries');
+        assert.equal(dictUpdated.data.legalConfig.maxAdditionalCriteria, 4);
+        assert.equal(dictUpdated.data.legalConfig.appealDaysLimit, 10);
+
+        // Now selecting 4 additional criteria on Katarzyna's unsigned setup succeeds!
+        const katWs = await apiReq(`/api/users/${katarzynaId}/workspace`, { userId: marek.id });
+        const setupFour = await apiReq(`/api/evaluations/${katWs.data.activeEvaluation.id}/setup`, {
+            method: 'PUT',
+            userId: marek.id,
+            body: { additionalCriteriaIds: [2, 3, 5, 7], signByEvaluator: false },
+        });
+        assert.equal(setupFour.status, 200);
+        assert.equal(setupFour.data.evaluation.criteria.length, 9); // 5 mandatory + 4 additional
+
+        // Reset back to statutory defaults
+        const resetRes = await apiReq('/api/legal-config/reset', {
+            method: 'POST',
+            userId: admin.id,
+        });
+        assert.equal(resetRes.status, 200);
+        assert.equal(resetRes.data.legalConfig.cycleMonths, 24);
+        assert.equal(resetRes.data.legalConfig.maxAdditionalCriteria, 3);
+        assert.equal(resetRes.data.legalConfig.appealDaysLimit, 7);
     });
 });

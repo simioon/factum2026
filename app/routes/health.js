@@ -1,8 +1,13 @@
 const express = require('express');
 const { query } = require('../db/pool');
-const { asyncHandler } = require('../middleware/errorHandler');
+const { resetDatabase } = require('../db/reset');
+const { HttpError, asyncHandler } = require('../middleware/errorHandler');
 
 const router = express.Router();
+
+function isDemoModeEnabled() {
+    return String(process.env.SEED_DEMO_DATA || 'true').toLowerCase() !== 'false';
+}
 
 router.get(
     '/health',
@@ -11,6 +16,7 @@ router.get(
         res.json({
             status: 'ok',
             db: 'connected',
+            demoMode: isDemoModeEnabled(),
             server_time: result.rows[0].server_time,
         });
     })
@@ -25,6 +31,17 @@ router.get(
             server_time: result.rows[0].server_time,
             pg_version: result.rows[0].pg_version,
         });
+    })
+);
+
+router.post(
+    '/demo/reset',
+    asyncHandler(async (req, res) => {
+        if (!isDemoModeEnabled()) {
+            throw new HttpError(403, 'Reset danych demonstracyjnych jest wyłączony w trybie produkcyjnym (SEED_DEMO_DATA=false).');
+        }
+        await resetDatabase();
+        res.json({ reset: true });
     })
 );
 

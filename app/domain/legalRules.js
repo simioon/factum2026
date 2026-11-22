@@ -1,4 +1,7 @@
-const LEGAL_CONFIG = {
+const fs = require('fs');
+const path = require('path');
+
+const DEFAULT_LEGAL_CONFIG = Object.freeze({
     cycleMonths: 24,
     cycleMonthsAfterNegative: 6,
     initialInterviewDaysNormal: 30,
@@ -6,7 +9,109 @@ const LEGAL_CONFIG = {
     maxAdditionalCriteria: 3,
     appealDaysLimit: 7,
     appealReviewDaysLimit: 14,
-};
+    absenceShiftThresholdDays: 30,
+});
+
+const LEGAL_CONFIG_BOUNDS = Object.freeze({
+    cycleMonths: { min: 1, max: 60, env: 'LEGAL_CYCLE_MONTHS', label: 'Standardowa długość okresu oceny (mies.)' },
+    cycleMonthsAfterNegative: { min: 1, max: 36, env: 'LEGAL_CYCLE_MONTHS_AFTER_NEGATIVE', label: 'Okres oceny po ocenie negatywnej (mies.)' },
+    initialInterviewDaysNormal: { min: 1, max: 180, env: 'LEGAL_INITIAL_INTERVIEW_DAYS', label: 'Termin rozmowy wstępnej — tryb standardowy (dni)' },
+    initialInterviewDaysAfterNegative: { min: 1, max: 90, env: 'LEGAL_INITIAL_INTERVIEW_DAYS_AFTER_NEGATIVE', label: 'Termin rozmowy wstępnej po ocenie negatywnej (dni)' },
+    maxAdditionalCriteria: { min: 0, max: 10, env: 'LEGAL_MAX_ADDITIONAL_CRITERIA', label: 'Maksymalna liczba kryteriów dodatkowych' },
+    appealDaysLimit: { min: 1, max: 60, env: 'LEGAL_APPEAL_DAYS_LIMIT', label: 'Termin na złożenie sprzeciwu przez pracownika (dni)' },
+    appealReviewDaysLimit: { min: 1, max: 90, env: 'LEGAL_APPEAL_REVIEW_DAYS_LIMIT', label: 'Termin rozpatrzenia sprzeciwu przez Dyrektora (dni)' },
+    absenceShiftThresholdDays: { min: 1, max: 180, env: 'LEGAL_ABSENCE_SHIFT_THRESHOLD_DAYS', label: 'Próg nieobecności przesuwającej termin oceny (dni)' },
+});
+
+function getLegalConfigFilePath() {
+    return process.env.LEGAL_CONFIG_PATH || path.join(__dirname, '..', 'data', 'legal-config.json');
+}
+
+function validateLegalConfigPatch(patch, base = LEGAL_CONFIG) {
+    if (!patch || typeof patch !== 'object' || Array.isArray(patch)) {
+        throw new Error('Nieprawidłowy format konfiguracji parametrów prawnych.');
+    }
+    const next = { ...base };
+    for (const [key, meta] of Object.entries(LEGAL_CONFIG_BOUNDS)) {
+        if (!Object.prototype.hasOwnProperty.call(patch, key)) continue;
+        const val = Number(patch[key]);
+        if (!Number.isInteger(val) || val < meta.min || val > meta.max) {
+            throw new Error(
+                `Parametr „${meta.label}” musi być liczbą całkowitą z zakresu ${meta.min}–${meta.max}.`
+            );
+        }
+        next[key] = val;
+    }
+    return next;
+}
+
+function loadInitialLegalConfig() {
+    const cfg = { ...DEFAULT_LEGAL_CONFIG };
+
+    // 1. Apply optional environment variable overrides
+    for (const [key, meta] of Object.entries(LEGAL_CONFIG_BOUNDS)) {
+        const raw = process.env[meta.env];
+        if (raw !== undefined && raw !== '') {
+            const val = Number(raw);
+            if (Number.isInteger(val) && val >= meta.min && val <= meta.max) {
+                cfg[key] = val;
+            }
+        }
+    }
+
+    // 2. Apply persisted Admin overrides (if present)
+    try {
+        const filePath = getLegalConfigFilePath();
+        if (fs.existsSync(filePath)) {
+            const parsed = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+            Object.assign(cfg, validateLegalConfigPatch(parsed, cfg));
+        }
+    } catch {
+        // Ignore corrupt/unreadable override file and keep defaults
+    }
+
+    return cfg;
+}
+
+const LEGAL_CONFIG = loadInitialLegalConfig();
+
+function getLegalConfig() {
+    return { ...LEGAL_CONFIG };
+}
+
+function persistLegalConfigFile(cfg) {
+    const filePath = getLegalConfigFilePath();
+    fs.mkdirSync(path.dirname(filePath), { recursive: true });
+    fs.writeFileSync(filePath, `${JSON.stringify(cfg, null, 2)}\n`, 'utf8');
+}
+
+function updateLegalConfig(patch, { persist = true } = {}) {
+    const next = validateLegalConfigPatch(patch, LEGAL_CONFIG);
+    Object.assign(LEGAL_CONFIG, next);
+    if (persist) {
+        try {
+            persistLegalConfigFile(LEGAL_CONFIG);
+        } catch (err) {
+            console.warn('Could not persist legal-config.json:', err.message);
+        }
+    }
+    return getLegalConfig();
+}
+
+function resetLegalConfig({ removeFile = true } = {}) {
+    Object.assign(LEGAL_CONFIG, DEFAULT_LEGAL_CONFIG);
+    if (removeFile) {
+        try {
+            const filePath = getLegalConfigFilePath();
+            if (fs.existsSync(filePath)) {
+                fs.unlinkSync(filePath);
+            }
+        } catch {
+            // Ignore cleanup errors
+        }
+    }
+    return getLegalConfig();
+}
 
 const SCORE_SCALE = [
     { value: 1, label: '1 pkt — Znacznie poniżej oczekiwań' },
@@ -307,7 +412,13 @@ function slugifyEmail(name) {
 }
 
 module.exports = {
+    DEFAULT_LEGAL_CONFIG,
+    LEGAL_CONFIG_BOUNDS,
     LEGAL_CONFIG,
+    getLegalConfig,
+    validateLegalConfigPatch,
+    updateLegalConfig,
+    resetLegalConfig,
     SCORE_SCALE,
     LEVEL_LABELS,
     STATUS_LABELS,
