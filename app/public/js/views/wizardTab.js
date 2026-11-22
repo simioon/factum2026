@@ -125,9 +125,9 @@ export function renderWizardTab(workspace, onFinalized) {
             tagSummary.entries.length === 0
                 ? '<p class="text-muted">Brak tagów z zadań powiązanych z tym kryterium w bieżącym okresie.</p>'
                 : tagSummary.entries
-                      .map((e) => {
-                          const isPos = e.polarity === '+';
-                          return `
+                    .map((e) => {
+                        const isPos = e.polarity === '+';
+                        return `
                             <div class="tag-row ${isPos ? 'pos' : 'neg'}" style="margin-bottom:6px;">
                                 <div class="tag-row-content">
                                     <strong style="color:${isPos ? 'var(--positive)' : 'var(--negative)'};">${isPos ? '(+)' : '(-)'} ${escapeHtml(e.tagId)}</strong>
@@ -135,8 +135,8 @@ export function renderWizardTab(workspace, onFinalized) {
                                 </div>
                             </div>
                         `;
-                      })
-                      .join('');
+                    })
+                    .join('');
 
         const scoreScale = (state.dictionaries && state.dictionaries.scoreScale) || [];
         const radiosHtml = scoreScale
@@ -230,12 +230,12 @@ export function renderWizardTab(workspace, onFinalized) {
     const prevEval = pastEvaluations.find((e) => e.status === 'ZAKONCZONA') || null;
     const autoRankPromotion = Boolean(
         user.employmentType === 'MIANOWANIE' &&
-            user.rank < 9 &&
-            calc.result === 'POZYTYWNA' &&
-            calc.average > 6 &&
-            prevEval &&
-            prevEval.wynik_ogolny === 'POZYTYWNA' &&
-            Number(prevEval.srednia_punktow) > 6
+        user.rank < 9 &&
+        calc.result === 'POZYTYWNA' &&
+        calc.average > 6 &&
+        prevEval &&
+        prevEval.wynik_ogolny === 'POZYTYWNA' &&
+        Number(prevEval.srednia_punktow) > 6
     );
 
     const tableRows = activeCriteria
@@ -283,15 +283,15 @@ export function renderWizardTab(workspace, onFinalized) {
         filteredEvidence.length === 0
             ? '<p class="text-muted" style="padding:10px;">Brak obserwacji spełniających wybrany filtr.</p>'
             : filteredEvidence
-                  .map((b) => {
-                      const isChecked = state.wizard.selectedEvidenceKeys.includes(b.key);
-                      const cardTypeClass = b.isWellbeing ? 'wellbeing' : b.polarity === '+' ? 'pos' : 'neg';
-                      const tagBadgeClass = b.isWellbeing
-                          ? 'badge-wellbeing'
-                          : b.polarity === '+'
+                .map((b) => {
+                    const isChecked = state.wizard.selectedEvidenceKeys.includes(b.key);
+                    const cardTypeClass = b.isWellbeing ? 'wellbeing' : b.polarity === '+' ? 'pos' : 'neg';
+                    const tagBadgeClass = b.isWellbeing
+                        ? 'badge-wellbeing'
+                        : b.polarity === '+'
                             ? 'badge-positive'
                             : 'badge-negative';
-                      return `
+                    return `
                         <label class="evidence-card ${cardTypeClass} ${isChecked ? 'checked' : ''}">
                             <input type="checkbox" data-evidence-key="${escapeHtml(b.key)}" ${isChecked ? 'checked' : ''}>
                             <div style="flex:1;">
@@ -303,8 +303,8 @@ export function renderWizardTab(workspace, onFinalized) {
                             </div>
                         </label>
                     `;
-                  })
-                  .join('');
+                })
+                .join('');
 
     const iprzPills = buildSmartIprzPills(activeCriteria, state.wizard.scores, tagSummariesByCriterion);
     const pillsHtml = iprzPills
@@ -314,10 +314,7 @@ export function renderWizardTab(workspace, onFinalized) {
         })
         .join('');
 
-    const legalBadgeHtml =
-        calc.result === 'NEGATYWNA'
-            ? '<span class="badge badge-negative">Uzasadnienie OBOWIĄZKOWE (wymagane do podpisu)</span>'
-            : '<span class="badge badge-positive">Uzasadnienie fakultatywne</span>';
+
 
     container.innerHTML =
         appealCorrectionBanner +
@@ -344,20 +341,11 @@ export function renderWizardTab(workspace, onFinalized) {
 
             <div class="split-screen">
                 <div class="split-panel">
-                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; margin-bottom:6px;">
-                        <h3 style="margin:0;">Uzasadnienie oceny okresowej</h3>
-                        ${legalBadgeHtml}
-                    </div>
-                    <p class="text-muted" style="font-size:12px;">Wygeneruj szybki szkic z ocen i tagów, a następnie zaznacz wybrane fakty po prawej stronie:</p>
-
-                    <div class="draft-btn-group">
-                        <button type="button" class="btn btn-sm" data-draft-mode="general">Ogólne podsumowanie</button>
-                        <button type="button" class="btn btn-sm" data-draft-mode="key">Kluczowe obszary (+/-)</button>
-                        <button type="button" class="btn btn-sm" data-draft-mode="detailed">Szczegółowe (wszystkie kryteria)</button>
-                    </div>
+                    <h3 style="margin-bottom:6px;">Uzasadnienie oceny okresowej</h3>
+                    <p class="text-muted" style="font-size:12px;">Wpisz ręcznie uzasadnienie oceny końcowej:</p>
 
                     <textarea id="wizard-justification" style="min-height:240px;"
-                        placeholder="Kliknij jeden z przycisków powyżej lub zaznacz klocki dowodowe po prawej stronie, albo wpisz własny tekst...">${escapeHtml(state.wizard.justification)}</textarea>
+                        placeholder="Wpisz uzasadnienie oceny końcowej...">${escapeHtml(state.wizard.justification)}</textarea>
                 </div>
 
                 <div class="split-panel">
@@ -411,70 +399,6 @@ export function renderWizardTab(workspace, onFinalized) {
         });
     }
 
-    container.querySelectorAll('[data-draft-mode]').forEach((btn) => {
-        btn.addEventListener('click', () => {
-            const mode = btn.dataset.draftMode;
-            const existingBullets = allEvidence
-                .filter((b) => state.wizard.selectedEvidenceKeys.includes(b.key))
-                .map((b) => b.formattedLine);
-
-            let draftText = '';
-            if (mode === 'general') {
-                draftText =
-                    `W okresie podlegającym ocenie pracownik uzyskał średnią arytmetyczną ${calc.average} pkt, co odpowiada ogólnemu poziomowi: ${calc.level.toLowerCase()} (ocena okresowa: ${calc.result}). ` +
-                    (calc.result === 'POZYTYWNA'
-                        ? `Realizacja głównych obowiązków na stanowisku ${user.nazwa_stanowiska} przebiegała zgodnie z oczekiwaniami i standardami służby cywilnej.`
-                        : `W ocenianym okresie wystąpiły istotne obszary wymagające pilnej poprawy w zakresie realizacji obowiązków na stanowisku ${user.nazwa_stanowiska}.`);
-            } else if (mode === 'key') {
-                let maxScore = -1;
-                let minScore = 99;
-                for (const c of activeCriteria) {
-                    const sc = Number(state.wizard.scores[c.kryterium_id] || 5);
-                    if (sc > maxScore) maxScore = sc;
-                    if (sc < minScore) minScore = sc;
-                }
-                const strongest = [];
-                const weakest = [];
-                for (const c of activeCriteria) {
-                    const sc = Number(state.wizard.scores[c.kryterium_id] || 5);
-                    const sum = (tagSummariesByCriterion && tagSummariesByCriterion[c.kryterium_id]) || {
-                        posCount: 0,
-                        negCount: 0,
-                    };
-                    if (sc === maxScore) strongest.push(`${c.nazwa} (${sc} pkt, tagi: +${sum.posCount}/-${sum.negCount})`);
-                    if (sc === minScore && sc < maxScore)
-                        weakest.push(`${c.nazwa} (${sc} pkt, tagi: +${sum.posCount}/-${sum.negCount})`);
-                }
-                draftText = `Ocena okresowa (${calc.result}, średnia ${calc.average} pkt — ${calc.level.toLowerCase()}).\nMocne strony: ${strongest.join(', ')}.`;
-                if (weakest.length > 0) {
-                    draftText += `\nObszary wymagające wsparcia lub poprawy: ${weakest.join(', ')}.`;
-                }
-            } else if (mode === 'detailed') {
-                const lines = [
-                    `Szczegółowe uzasadnienie oceny okresowej (${calc.result}, średnia ${calc.average} pkt — ${calc.level.toLowerCase()}):`,
-                ];
-                for (const c of activeCriteria) {
-                    const sc = state.wizard.scores[c.kryterium_id];
-                    const sum = (tagSummariesByCriterion && tagSummariesByCriterion[c.kryterium_id]) || {
-                        posCount: 0,
-                        negCount: 0,
-                    };
-                    lines.push(
-                        `- ${c.nazwa}: ${sc} pkt (zebrane obserwacje: ${sum.posCount} pozytywnych, ${sum.negCount} do poprawy).`
-                    );
-                }
-                draftText = lines.join('\n');
-            }
-
-            if (existingBullets.length > 0) {
-                draftText += `\n\nPrzykłady potwierdzające ocenę:\n${existingBullets.join('\n')}`;
-            }
-
-            state.wizard.justification = draftText;
-            justifTa.value = draftText;
-            showToast('Wygenerowano szkic uzasadnienia na podstawie ocen i tagów.', 'success');
-        });
-    });
 
     container.querySelectorAll('[data-ev-filter]').forEach((btn) => {
         btn.addEventListener('click', () => {
@@ -563,8 +487,8 @@ export function renderWizardTab(workspace, onFinalized) {
     container.querySelector('#btn-wiz-finalize').addEventListener('click', async () => {
         const justif = justifTa.value.trim();
         const iprz = iprzTa.value.trim();
-        if (calc.result === 'NEGATYWNA' && !justif) {
-            showToast('Blokada podpisu: przy ocenie NEGATYWNEJ uzasadnienie jest obowiązkowe!', 'error');
+        if (!justif) {
+            showToast('Blokada podpisu: wpisanie uzasadnienia oceny końcowej jest obowiązkowe!', 'error');
             return;
         }
         try {

@@ -12,17 +12,44 @@ export function renderEmployeePanel(workspace, targetElementId, onRefresh) {
     const isAfterNegative = lastCompleted && lastCompleted.wynik_ogolny === 'NEGATYWNA';
     const criteriaLimitDays = isAfterNegative ? 7 : 30;
 
-    const criteriaHtml = activeEvaluation
-        ? activeEvaluation.criteria
-              .map((c) => {
-                  const typeBadge =
-                      c.typ_kryterium === 'OBOWIAZKOWE'
-                          ? '<span class="badge badge-primary">Obowiązkowe</span>'
-                          : '<span class="badge badge-warning">Dodatkowe</span>';
-                  return `<li style="margin-bottom:6px;"><strong>${escapeHtml(c.nazwa)}</strong> ${typeBadge}</li>`;
-              })
-              .join('')
-        : '<li class="text-muted">Brak aktywnego cyklu oceny.</li>';
+    const isInitialTalkDone = Boolean(activeEvaluation && activeEvaluation.data_rozmowy_wstepnej);
+    const previousEvalWithCriteria =
+        lastCompleted ||
+        (pastEvaluations && pastEvaluations.find((e) => Array.isArray(e.criteria) && e.criteria.length > 0)) ||
+        null;
+
+    let criteriaHeading = `Kryteria brane pod uwagę w bieżącej ocenie (Arkusz ${escapeHtml(user.arkusz || '—')})`;
+    let criteriaNoteHtml = '';
+    let criteriaSource = activeEvaluation ? activeEvaluation.criteria : [];
+
+    if (activeEvaluation && !isInitialTalkDone) {
+        if (previousEvalWithCriteria) {
+            const prevSheet = previousEvalWithCriteria.typ_arkusza || user.arkusz || '—';
+            criteriaHeading = `Kryteria użyte w poprzedniej ocenie (Arkusz ${escapeHtml(prevSheet)})`;
+            criteriaNoteHtml =
+                '<p class="text-muted" style="margin-top:4px; font-size:13px;">Rozmowa wstępna nie została jeszcze przeprowadzona — kryteria dla bieżącego okresu zostaną dopiero ustalone.</p>';
+            if (Array.isArray(previousEvalWithCriteria.criteria) && previousEvalWithCriteria.criteria.length > 0) {
+                criteriaSource = previousEvalWithCriteria.criteria;
+            }
+        } else {
+            criteriaHeading = `Kryteria oceny — oczekują na ustalenie (Arkusz ${escapeHtml(user.arkusz || '—')})`;
+            criteriaNoteHtml =
+                '<p class="text-muted" style="margin-top:4px; font-size:13px;">Kryteria obowiązkowe i dodatkowe zostaną zatwierdzone podczas rozmowy wstępnej.</p>';
+        }
+    }
+
+    const criteriaHtml =
+        activeEvaluation && criteriaSource && criteriaSource.length > 0
+            ? criteriaSource
+                .map((c) => {
+                    const typeBadge =
+                        c.typ_kryterium === 'OBOWIAZKOWE'
+                            ? '<span class="badge badge-primary">Obowiązkowe</span>'
+                            : '<span class="badge badge-warning">Dodatkowe</span>';
+                    return `<li style="margin-bottom:6px;"><strong>${escapeHtml(c.nazwa)}</strong> ${typeBadge}</li>`;
+                })
+                .join('')
+            : '<li class="text-muted">Brak aktywnego cyklu oceny.</li>';
 
     // Two-sided e-signature action banners
     let actionBannersHtml = '';
@@ -62,7 +89,7 @@ export function renderEmployeePanel(workspace, targetElementId, onRefresh) {
                         <tbody>${scoresRows}</tbody>
                     </table>
                 </div>
-                <p style="white-space:pre-line;"><strong>Uzasadnienie:</strong> ${escapeHtml(activeEvaluation.uzasadnienie_oceny || 'Brak (fakultatywne)')}</p>
+                <p style="white-space:pre-line;"><strong>Uzasadnienie:</strong> ${escapeHtml(activeEvaluation.uzasadnienie_oceny || 'Brak')}</p>
                 <p style="margin-top:6px; white-space:pre-line;"><strong>Wnioski do IPRZ:</strong> ${escapeHtml(activeEvaluation.wnioski_iprz || '—')}</p>
                 <p class="text-muted" style="margin-top:6px; font-size:12px;">Podpis oceniającego: ${escapeHtml(formatDateTime(activeEvaluation.podpis_ocena_oceniajacy_at))}</p>
                 <div style="margin-top:14px; display:flex; gap:8px; flex-wrap:wrap;">
@@ -122,8 +149,8 @@ export function renderEmployeePanel(workspace, targetElementId, onRefresh) {
                     ev.status === 'UNIEWAZNIONA'
                         ? '<span class="badge badge-negative">UNIEWAŻNIONA</span>'
                         : ev.status === 'ODWOLANIE_W_TOKU'
-                          ? '<span class="badge badge-warning">ODWOŁANIE W TOKU</span>'
-                          : '';
+                            ? '<span class="badge badge-warning">ODWOŁANIE W TOKU</span>'
+                            : '';
 
                 const latestAppeal = ev.appeals && ev.appeals.length > 0 ? ev.appeals[0] : null;
                 let appealBlock = '';
@@ -167,7 +194,7 @@ export function renderEmployeePanel(workspace, targetElementId, onRefresh) {
                                 <button type="button" class="btn btn-xs" data-print-past-eval="${ev.id}">Drukuj / PDF</button>
                             </div>
                         </div>
-                        <p style="white-space:pre-line;"><strong>Uzasadnienie:</strong> ${escapeHtml(ev.uzasadnienie_oceny || 'Brak (fakultatywne przy ocenie pozytywnej)')}</p>
+                        <p style="white-space:pre-line;"><strong>Uzasadnienie:</strong> ${escapeHtml(ev.uzasadnienie_oceny || 'Brak')}</p>
                         <p style="margin-top:6px; white-space:pre-line;"><strong>Wnioski do IPRZ:</strong> ${escapeHtml(ev.wnioski_iprz || '—')}</p>
                         <p class="text-muted" style="margin-top:6px; font-size:12px;">
                             Podpis oceniającego: ${escapeHtml(formatDateTime(ev.podpis_ocena_oceniajacy_at))} |
@@ -206,7 +233,7 @@ export function renderEmployeePanel(workspace, targetElementId, onRefresh) {
                     <p style="margin-top:6px;"><strong>Status zatrudnienia:</strong> ${rankText}</p>
                 </div>
                 <div>
-                    <p><strong>Zasada terminu rozmowy wstępnej:</strong> ${isAfterNegative ? '<span class="badge badge-negative">7 dni (po ocenie negatywnej)</span>' : '<span class="badge badge-positive">30 dni (tryb standardowy)</span>'}</p>
+                    <p><strong>Terminu rozmowy wstępnej:</strong> ${isAfterNegative ? '<span class="badge badge-negative">7 dni (po ocenie negatywnej)</span>' : '<span class="badge badge-positive">30 dni (tryb standardowy)</span>'}</p>
                     ${activeEvaluation ? `<p style="margin-top:6px;"><strong>Status bieżącego cyklu:</strong> <span class="badge badge-primary">${escapeHtml(activeEvaluation.status_label)}</span></p>` : ''}
                 </div>
             </div>
@@ -214,9 +241,8 @@ export function renderEmployeePanel(workspace, targetElementId, onRefresh) {
 
         ${actionBannersHtml}
 
-        ${
-            activeEvaluation
-                ? `
+        ${activeEvaluation
+            ? `
             <div class="card">
                 <h3>Oś czasu bieżącego okresu oceny</h3>
                 <div class="timeline">
@@ -243,11 +269,12 @@ export function renderEmployeePanel(workspace, targetElementId, onRefresh) {
                 </div>
             </div>
         `
-                : ''
+            : ''
         }
 
         <div class="card">
-            <h3>Kryteria brane pod uwagę w bieżącej ocenie (Arkusz ${escapeHtml(user.arkusz || '—')})</h3>
+            <h3>${criteriaHeading}</h3>
+            ${criteriaNoteHtml}
             <ul style="margin-left:18px; margin-top:8px;">${criteriaHtml}</ul>
         </div>
 
