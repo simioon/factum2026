@@ -480,7 +480,7 @@ async function seedDemoData(client) {
                 data_rozpoczecia_cyklu, termin_wyznaczenia_kryteriow,
                 planowana_data_oceny
             ) VALUES (
-                $1, $2, 'C', 'WYZNACZANIE_KRYTERIOW',
+                $1, $2, null, 'WYZNACZANIE_KRYTERIOW',
                 '2025-03-01', '2025-03-31', '2027-03-01'
             ) RETURNING id;`,
             [piotr, marek]
