@@ -143,22 +143,22 @@ const SHEET_MANDATORY = {
 };
 
 const TAGS_SEED = [
-    { nazwa: '#JasnyPrzekaz', opis: 'mowa/pismo', kategoria: 'KOMPETENCYJNY', criteriaIds: [1, 12, 5] },
-    { nazwa: '#Argumentacja', opis: 'przekonywanie', kategoria: 'KOMPETENCYJNY', criteriaIds: [1, 3, 12] },
-    { nazwa: '#TaktIEmpatia', opis: 'szacunek/słuchanie', kategoria: 'KOMPETENCYJNY', criteriaIds: [5, 1, 11] },
-    { nazwa: '#PracaZespołowa', opis: 'wsparcie/atmosfera', kategoria: 'KOMPETENCYJNY', criteriaIds: [11, 13] },
-    { nazwa: '#TerminowośćIPriorytety', opis: 'czas/pilność', kategoria: 'KOMPETENCYJNY', criteriaIds: [4, 8, 12] },
-    { nazwa: '#JakośćIProcedury', opis: 'zgodność z prawem', kategoria: 'KOMPETENCYJNY', criteriaIds: [8, 10] },
-    { nazwa: '#ElastycznośćIStres', opis: 'presja/kryzys', kategoria: 'KOMPETENCYJNY', criteriaIds: [4, 7, 12] },
-    { nazwa: '#InicjatywaIInnowacja', opis: 'nowe pomysły', kategoria: 'KOMPETENCYJNY', criteriaIds: [2, 5, 10] },
-    { nazwa: '#AnalizaIRyzyko', opis: 'wnioski/ryzyko', kategoria: 'KOMPETENCYJNY', criteriaIds: [9, 6, 14] },
-    { nazwa: '#Decyzyjność', opis: 'odpowiedzialność', kategoria: 'KOMPETENCYJNY', criteriaIds: [6, 7] },
-    { nazwa: '#RozwójIWiedza', opis: 'szkolenia/technologia', kategoria: 'KOMPETENCYJNY', criteriaIds: [10, 11] },
-    { nazwa: '#DelegowanieIMonitoring', opis: 'podział zadań', kategoria: 'KOMPETENCYJNY', criteriaIds: [13, 4] },
-    { nazwa: '#MotywowanieIFeedback', opis: 'rozwój zespołu', kategoria: 'KOMPETENCYJNY', criteriaIds: [13] },
-    { nazwa: '#WizjaIStrategia', opis: 'cele strategiczne', kategoria: 'KOMPETENCYJNY', criteriaIds: [14, 3] },
-    { nazwa: '#Przeciążenie', opis: 'Dobrostan / HR Partner', kategoria: 'DOBROSTAN', criteriaIds: [] },
-    { nazwa: '#Nadgodziny', opis: 'Dobrostan / HR Partner', kategoria: 'DOBROSTAN', criteriaIds: [] },
+    { nazwa: 'Jasny Przekaz', opis: 'mowa/pismo', kategoria: 'KOMPETENCYJNY', criteriaIds: [1, 12, 5] },
+    { nazwa: 'Argumentacja', opis: 'przekonywanie', kategoria: 'KOMPETENCYJNY', criteriaIds: [1, 3, 12] },
+    { nazwa: 'Takt I Empatia', opis: 'szacunek/słuchanie', kategoria: 'KOMPETENCYJNY', criteriaIds: [5, 1, 11] },
+    { nazwa: 'Praca Zespołowa', opis: 'wsparcie/atmosfera', kategoria: 'KOMPETENCYJNY', criteriaIds: [11, 13] },
+    { nazwa: 'Terminowość I Priorytety', opis: 'czas/pilność', kategoria: 'KOMPETENCYJNY', criteriaIds: [4, 8, 12] },
+    { nazwa: 'Jakość I Procedury', opis: 'zgodność z prawem', kategoria: 'KOMPETENCYJNY', criteriaIds: [8, 10] },
+    { nazwa: 'Elastyczność I Stres', opis: 'presja/kryzys', kategoria: 'KOMPETENCYJNY', criteriaIds: [4, 7, 12] },
+    { nazwa: 'Inicjatywa I Innowacja', opis: 'nowe pomysły', kategoria: 'KOMPETENCYJNY', criteriaIds: [2, 5, 10] },
+    { nazwa: 'Analiza I Ryzyko', opis: 'wnioski/ryzyko', kategoria: 'KOMPETENCYJNY', criteriaIds: [9, 6, 14] },
+    { nazwa: 'Decyzyjność', opis: 'odpowiedzialność', kategoria: 'KOMPETENCYJNY', criteriaIds: [6, 7] },
+    { nazwa: 'Rozwój I Wiedza', opis: 'szkolenia/technologia', kategoria: 'KOMPETENCYJNY', criteriaIds: [10, 11] },
+    { nazwa: 'Delegowanie I Monitoring', opis: 'podział zadań', kategoria: 'KOMPETENCYJNY', criteriaIds: [13, 4] },
+    { nazwa: 'Motywowanie I Feedback', opis: 'rozwój zespołu', kategoria: 'KOMPETENCYJNY', criteriaIds: [13] },
+    { nazwa: 'Wizja I Strategia', opis: 'cele strategiczne', kategoria: 'KOMPETENCYJNY', criteriaIds: [14, 3] },
+    { nazwa: 'Przeciążenie', opis: 'Dobrostan / HR Partner', kategoria: 'DOBROSTAN', criteriaIds: [] },
+    { nazwa: 'Nadgodziny', opis: 'Dobrostan / HR Partner', kategoria: 'DOBROSTAN', criteriaIds: [] },
 ];
 
 async function insertCriteriaRows(client, ocenaId, scoresByCriterion) {
