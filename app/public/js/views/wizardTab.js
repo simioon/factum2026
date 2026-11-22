@@ -7,6 +7,7 @@ import {
     formatDate,
     formatDateTime,
     getAllEvidenceBlocks,
+    renderPreviousEvaluationCheatSheetHtml,
     showToast,
     toRomanRank,
 } from '../utils.js';
@@ -92,6 +93,7 @@ export function renderWizardTab(workspace, onFinalized) {
         </div>
     `
         : '';
+    const prevSummaryHtml = renderPreviousEvaluationCheatSheetHtml(pastEvaluations);
     const headerInfo = `
         <div class="card" style="background: var(--bg-subtle);">
             <div style="display:flex; flex-wrap:wrap; justify-content:space-between; gap:8px;">
@@ -152,6 +154,7 @@ export function renderWizardTab(workspace, onFinalized) {
             .join('');
 
         container.innerHTML =
+            prevSummaryHtml +
             appealCorrectionBanner +
             headerInfo +
             `
@@ -318,6 +321,7 @@ export function renderWizardTab(workspace, onFinalized) {
 
 
     container.innerHTML =
+        prevSummaryHtml +
         appealCorrectionBanner +
         headerInfo +
         `

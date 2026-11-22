@@ -180,3 +180,106 @@ export function renderAlertsHtml(alerts = []) {
         })
         .join('');
 }
+
+export function buildPreviousEvaluationSummary(pastEvaluations = [], { maxCriteriaItems = 3 } = {}) {
+    const lastCompleted = (pastEvaluations || []).find((e) => e && e.status === 'ZAKONCZONA') || null;
+    if (!lastCompleted) {
+        return {
+            hasHistory: false,
+            emptyMessage: 'Pierwsza ocena w systemie — brak wcześniejszej historii.',
+        };
+    }
+
+    const scoredCriteria = (lastCompleted.criteria || []).filter(
+        (c) => c && c.punkty !== null && c.punkty !== undefined && !Number.isNaN(Number(c.punkty))
+    );
+    const lowCriteria = scoredCriteria
+        .filter((c) => Number(c.punkty) <= 3)
+        .sort((a, b) => Number(a.punkty) - Number(b.punkty));
+
+    let focusMode = 'none';
+    let focusLabel = '';
+    let focusItems = [];
+    let overflowCount = 0;
+
+    if (lowCriteria.length > 0) {
+        focusMode = 'below_expectations';
+        focusLabel = 'Obszary poniżej oczekiwań';
+        focusItems = lowCriteria.map((c) => ({ nazwa: c.nazwa, punkty: Number(c.punkty) }));
+    } else {
+        const additionalCriteria = scoredCriteria.filter((c) => c.typ_kryterium === 'DODATKOWE');
+        if (additionalCriteria.length > 0) {
+            focusMode = 'previous_additional';
+            focusLabel = 'Poprzednie kryteria dodatkowe';
+            focusItems = additionalCriteria.map((c) => ({ nazwa: c.nazwa, punkty: Number(c.punkty) }));
+        } else if (scoredCriteria.length > 0) {
+            focusMode = 'lowest_criteria';
+            const minScore = Math.min(...scoredCriteria.map((c) => Number(c.punkty)));
+            const lowest = scoredCriteria.filter((c) => Number(c.punkty) === minScore);
+            focusLabel = lowest.length === 1 ? 'Najniżej ocenione kryterium' : 'Najniżej ocenione kryteria';
+            focusItems = lowest.slice(0, maxCriteriaItems).map((c) => ({ nazwa: c.nazwa, punkty: Number(c.punkty) }));
+            overflowCount = Math.max(0, lowest.length - focusItems.length);
+        }
+    }
+
+    const rawDate = lastCompleted.data_zapoznania_z_ocena || lastCompleted.data_rozmowy_oceniajacej || null;
+    const avgVal =
+        lastCompleted.srednia_punktow !== null && lastCompleted.srednia_punktow !== undefined
+            ? Number(lastCompleted.srednia_punktow)
+            : null;
+    const averageText = avgVal !== null && !Number.isNaN(avgVal) ? Number(avgVal.toFixed(2)).toString() : '—';
+
+    return {
+        hasHistory: true,
+        evaluationId: lastCompleted.id,
+        result: lastCompleted.wynik_ogolny || '—',
+        averageText,
+        dateText: formatDate(rawDate),
+        focusMode,
+        focusLabel,
+        focusItems,
+        overflowCount,
+        iprz: String(lastCompleted.wnioski_iprz || '').trim() || null,
+    };
+}
+
+export function renderPreviousEvaluationCheatSheetHtml(pastEvaluations = []) {
+    const summary = buildPreviousEvaluationSummary(pastEvaluations);
+    if (!summary.hasHistory) {
+        return `
+            <div class="prev-eval-cheatsheet is-empty">
+                <span class="text-muted">${escapeHtml(summary.emptyMessage)}</span>
+            </div>
+        `;
+    }
+
+    const isNeg = summary.result === 'NEGATYWNA';
+    const itemsText = summary.focusItems
+        .map((item) => `${escapeHtml(item.nazwa)} (${item.punkty} pkt)`)
+        .join(', ');
+    const overflowHtml =
+        summary.overflowCount > 0 ? ` <span class="text-muted">(+${summary.overflowCount})</span>` : '';
+    const focusLineHtml =
+        summary.focusLabel && summary.focusItems.length > 0
+            ? `<div><strong>${escapeHtml(summary.focusLabel)}:</strong> ${itemsText}${overflowHtml}</div>`
+            : '';
+
+    const iprzHtml = summary.iprz
+        ? `<span style="white-space:pre-line;">${escapeHtml(summary.iprz)}</span>`
+        : '<span class="text-muted">Brak zapisanych wniosków.</span>';
+
+    return `
+        <div class="prev-eval-cheatsheet ${isNeg ? 'is-negative' : 'is-positive'}">
+            <div class="prev-eval-title">Podsumowanie poprzedniej oceny (ściągawka przed rozmową)</div>
+            <div class="prev-eval-lines">
+                <div>
+                    <strong>Ostatni wynik:</strong>
+                    <span class="badge ${isNeg ? 'badge-negative' : 'badge-positive'}">${escapeHtml(summary.result)} (${escapeHtml(summary.averageText)} pkt)</span>
+                    <span class="text-muted">&mdash; ${escapeHtml(summary.dateText)}</span>
+                </div>
+                ${focusLineHtml}
+                <div><strong>Poprzednie wnioski do IPRZ:</strong> ${iprzHtml}</div>
+            </div>
+        </div>
+    `;
+}
