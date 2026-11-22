@@ -502,9 +502,9 @@ async function seedDemoData(client) {
             opis: 'Zebranie danych z 4 wydziałów i opracowanie zestawienia dla Ministerstwa.',
             dataZdarzenia: '2025-09-14',
             tags: [
-                { tagName: '#JakośćIProcedury', polarity: '+', comment: 'Zero błędów formalnych, wzorowa zgodność z wytycznymi.' },
-                { tagName: '#AnalizaIRyzyko', polarity: '+', comment: 'Szybko wychwyciła rozbieżność w kosztach terenowych.' },
-                { tagName: '#TerminowośćIPriorytety', polarity: '+', comment: 'Raport oddany 2 dni przed terminem.' },
+                { tagName: 'Jakość I Procedury', polarity: '+', comment: 'Zero błędów formalnych, wzorowa zgodność z wytycznymi.' },
+                { tagName: 'Analiza I Ryzyko', polarity: '+', comment: 'Szybko wychwyciła rozbieżność w kosztach terenowych.' },
+                { tagName: 'Terminowość I Priorytety', polarity: '+', comment: 'Raport oddany 2 dni przed terminem.' },
             ],
         },
         tagIdByName
@@ -519,8 +519,8 @@ async function seedDemoData(client) {
             opis: 'Odpowiedź pisemna i konsultacja telefoniczna z interesantem.',
             dataZdarzenia: '2026-03-20',
             tags: [
-                { tagName: '#JasnyPrzekaz', polarity: '+', comment: 'Bardzo przejrzyste i zrozumiałe pismo urzędowe.' },
-                { tagName: '#TaktIEmpatia', polarity: '+', comment: 'Spokojna, kulturalna rozmowa mimo dużych emocji interesanta.' },
+                { tagName: 'Jasny Przekaz', polarity: '+', comment: 'Bardzo przejrzyste i zrozumiałe pismo urzędowe.' },
+                { tagName: 'Takt I Empatia', polarity: '+', comment: 'Spokojna, kulturalna rozmowa mimo dużych emocji interesanta.' },
             ],
         },
         tagIdByName
@@ -535,9 +535,9 @@ async function seedDemoData(client) {
             opis: 'Przekazanie wiedzy i opieka merytoryczna w pierwszym miesiącu.',
             dataZdarzenia: '2026-08-05',
             tags: [
-                { tagName: '#PracaZespołowa', polarity: '+', comment: 'Chętnie pomagała i dbała o świetną atmosferę.' },
-                { tagName: '#RozwójIWiedza', polarity: '+', comment: 'Opracowała krótką instrukcję PDF dla całego wydziału.' },
-                { tagName: '#TerminowośćIPriorytety', polarity: '-', comment: 'Przez dodatkowe wsparcie opóźniła własną notatkę służbową o 1 dzień.' },
+                { tagName: 'Praca Zespołowa', polarity: '+', comment: 'Chętnie pomagała i dbała o świetną atmosferę.' },
+                { tagName: 'Rozwój I Wiedza', polarity: '+', comment: 'Opracowała krótką instrukcję PDF dla całego wydziału.' },
+                { tagName: 'Terminowość I Priorytety', polarity: '-', comment: 'Przez dodatkowe wsparcie opóźniła własną notatkę służbową o 1 dzień.' },
             ],
         },
         tagIdByName
@@ -552,9 +552,9 @@ async function seedDemoData(client) {
             opis: 'Przejęcie pilnych teczek w trakcie wzmożonego okresu sprawozdawczego.',
             dataZdarzenia: '2026-09-18',
             tags: [
-                { tagName: '#TerminowośćIPriorytety', polarity: '-', comment: 'Przekroczony termin oddania 2 protokołów kontrolnych.' },
-                { tagName: '#ElastycznośćIStres', polarity: '-', comment: 'Widoczne duże zmęczenie i trudność z presją czasu.' },
-                { tagName: '#Przeciążenie', polarity: '-', comment: 'Przejął pełen zakres obowiązków za nieobecnego współpracownika.' },
+                { tagName: 'Terminowość I Priorytety', polarity: '-', comment: 'Przekroczony termin oddania 2 protokołów kontrolnych.' },
+                { tagName: 'Elastyczność I Stres', polarity: '-', comment: 'Widoczne duże zmęczenie i trudność z presją czasu.' },
+                { tagName: 'Przeciążenie', polarity: '-', comment: 'Przejął pełen zakres obowiązków za nieobecnego współpracownika.' },
             ],
         },
         tagIdByName
@@ -569,9 +569,9 @@ async function seedDemoData(client) {
             opis: 'Przygotowanie korekty załączników i uzgodnień prawnych.',
             dataZdarzenia: '2026-10-22',
             tags: [
-                { tagName: '#JakośćIProcedury', polarity: '-', comment: 'Drobne pomyłki w numeracji załączników wymagające poprawy.' },
-                { tagName: '#Nadgodziny', polarity: '-', comment: 'Zostawał po godzinach 3 razy w tym samym tygodniu.' },
-                { tagName: '#PracaZespołowa', polarity: '+', comment: 'Mimo zmęczenia bez problemu przekazał komplet akt koleżance.' },
+                { tagName: 'Jakość I Procedury', polarity: '-', comment: 'Drobne pomyłki w numeracji załączników wymagające poprawy.' },
+                { tagName: 'Nadgodziny', polarity: '-', comment: 'Zostawał po godzinach 3 razy w tym samym tygodniu.' },
+                { tagName: 'Praca Zespołowa', polarity: '+', comment: 'Mimo zmęczenia bez problemu przekazał komplet akt koleżance.' },
             ],
         },
         tagIdByName
@@ -586,9 +586,9 @@ async function seedDemoData(client) {
             opis: 'Nowy podział obowiązków i wdrożenie cotygodniowych spotkań statusowych.',
             dataZdarzenia: '2026-06-10',
             tags: [
-                { tagName: '#DelegowanieIMonitoring', polarity: '+', comment: 'Jasny podział odpowiedzialności w zespole.' },
-                { tagName: '#MotywowanieIFeedback', polarity: '+', comment: 'Regularne rozmowy wspierające z pracownikami.' },
-                { tagName: '#Decyzyjność', polarity: '+', comment: 'Sprawne podjęcie decyzji o przesunięciu zasobów.' },
+                { tagName: 'Delegowanie I Monitoring', polarity: '+', comment: 'Jasny podział odpowiedzialności w zespole.' },
+                { tagName: 'Motywowanie I Feedback', polarity: '+', comment: 'Regularne rozmowy wspierające z pracownikami.' },
+                { tagName: 'Decyzyjność', polarity: '+', comment: 'Sprawne podjęcie decyzji o przesunięciu zasobów.' },
             ],
         },
         tagIdByName
