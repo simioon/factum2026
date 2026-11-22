@@ -47,11 +47,20 @@ router.get(
                 oo.wynik_ogolny,
                 oo.data_zapoznania_z_ocena,
                 oo.status AS evaluation_status,
+                followup_eval.id AS followup_evaluation_id,
+                followup_eval.status AS followup_evaluation_status,
                 p.imie_nazwisko AS pracownik_nazwa,
                 p.nazwa_stanowiska AS pracownik_stanowisko,
                 o.imie_nazwisko AS oceniajacy_nazwa
              FROM sprzeciwy_odwolania so
              JOIN oceny_okresowe oo ON oo.id = so.ocena_id
+             LEFT JOIN LATERAL (
+                SELECT id, status
+                FROM oceny_okresowe
+                WHERE poprzednia_ocena_id = oo.id
+                ORDER BY id DESC
+                LIMIT 1
+             ) followup_eval ON TRUE
              JOIN uzytkownicy p ON p.id = oo.pracownik_id
              JOIN uzytkownicy o ON o.id = oo.oceniajacy_id
              ${whereSql}

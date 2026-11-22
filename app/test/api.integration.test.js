@@ -272,6 +272,11 @@ test('Full end-to-end evaluation, HR events, visibility, appeals, and rank workf
         assert.equal(decideRes.data.newEvaluation.numer_podejscia, 2);
         assert.equal(decideRes.data.newEvaluation.poprzednia_ocena_id, completedEval.id);
         assert.equal(decideRes.data.newEvaluation.status, 'PRZED_ROZMOWA_OCENIAJACA');
+
+        const evaluatorAppeals = await apiReq('/api/appeals', { userId: jan.id });
+        const rerating = evaluatorAppeals.data.appeals.find((item) => item.id === appealId);
+        assert.equal(rerating.followup_evaluation_id, decideRes.data.newEvaluation.id);
+        assert.equal(rerating.followup_evaluation_status, 'PRZED_ROZMOWA_OCENIAJACA');
     });
 
     await t.test('9. Director requests correction -> evaluator can identify it for notification', async () => {

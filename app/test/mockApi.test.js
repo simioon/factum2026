@@ -155,6 +155,11 @@ test('Offline mockApi reproduces full evaluation, HR event, visibility, appeal, 
         );
         assert.equal(dec.evaluation.status, 'UNIEWAZNIONA');
         assert.equal(dec.newEvaluation.numer_podejscia, 2);
+
+        const evaluatorAppeals = await mockApi.getAppeals(jan.id);
+        const rerating = evaluatorAppeals.appeals.find((item) => item.id === ap.appeal.id);
+        assert.equal(rerating.followup_evaluation_id, dec.newEvaluation.id);
+        assert.equal(rerating.followup_evaluation_status, 'PRZED_ROZMOWA_OCENIAJACA');
     });
 
     await t.test('9. Director requests correction -> evaluator notification data is available', async () => {

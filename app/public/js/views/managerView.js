@@ -13,24 +13,39 @@ export function renderSubordinatesList(managerId, containerId, { onOpenProfile }
     const subs = state.users.filter((u) => u.przelozony_id === managerId);
 
     const appealAlerts = (state.appeals || [])
-        .filter(
-            (ap) =>
-                ap.oceniajacy_id === managerId &&
+        .filter((ap) => {
+            if (ap.oceniajacy_id !== managerId) return false;
+            if (
                 ap.decyzja_dyrektora === 'UWZGLEDNIONY_ZMIANA' &&
                 ap.evaluation_status === 'PRZED_ROZMOWA_OCENIAJACA'
-        )
+            ) {
+                return true;
+            }
+            return (
+                ap.decyzja_dyrektora === 'UWZGLEDNIONY_PONOWNA_OCENA' &&
+                ap.followup_evaluation_status === 'PRZED_ROZMOWA_OCENIAJACA'
+            );
+        })
         .map(
-            (ap) => `
+            (ap) => {
+                const isRerating = ap.decyzja_dyrektora === 'UWZGLEDNIONY_PONOWNA_OCENA';
+                return `
             <div class="alert-box alert-warning">
-                <strong>Ocena wymaga poprawy po decyzji Dyrektora:</strong>
-                ${escapeHtml(ap.pracownik_nazwa)} — ${escapeHtml(ap.uzasadnienie_decyzji || 'Dyrektor uwzględnił odwołanie i skierował ocenę do poprawy.')}
+                <strong>${isRerating ? 'Dyrektor zarządził ponowną ocenę:' : 'Ocena wymaga poprawy po decyzji Dyrektora:'}</strong>
+                ${escapeHtml(ap.pracownik_nazwa)} — ${escapeHtml(
+                    ap.uzasadnienie_decyzji ||
+                        (isRerating
+                            ? 'Wystaw ponownie ocenę pracownika.'
+                            : 'Dyrektor uwzględnił odwołanie i skierował ocenę do poprawy.')
+                )}
                 <div style="margin-top:8px;">
                     <button type="button" class="btn btn-primary btn-sm" data-open-correction="${ap.pracownik_id}">
-                        Otwórz kreator poprawy oceny
+                        ${isRerating ? 'Otwórz kreator ponownej oceny' : 'Otwórz kreator poprawy oceny'}
                     </button>
                 </div>
             </div>
-        `
+        `;
+            }
         )
         .join('');
 

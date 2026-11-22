@@ -1810,6 +1810,9 @@ export const mockApi = {
         const appeals = db.appeals
             .map((ap) => {
                 const ev = db.evaluations.find((e) => e.id === ap.ocena_id);
+                const followup = db.evaluations
+                    .filter((candidate) => candidate.poprzednia_ocena_id === ev.id)
+                    .sort((a, b) => b.id - a.id)[0];
                 const p = db.users.find((u) => u.id === ev.pracownik_id);
                 const o = db.users.find((u) => u.id === ev.oceniajacy_id);
                 return {
@@ -1822,6 +1825,8 @@ export const mockApi = {
                     wynik_ogolny: ev.wynik_ogolny,
                     data_zapoznania_z_ocena: ev.data_zapoznania_z_ocena,
                     evaluation_status: ev.status,
+                    followup_evaluation_id: followup ? followup.id : null,
+                    followup_evaluation_status: followup ? followup.status : null,
                     pracownik_nazwa: p ? p.imie_nazwisko : '',
                     pracownik_stanowisko: p ? p.nazwa_stanowiska : '',
                     oceniajacy_nazwa: o ? o.imie_nazwisko : '',
