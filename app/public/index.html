@@ -3,25 +3,32 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cyfrowy Asystent Ocen Okresowych — Służba Cywilna (HackNation 2026)</title>
+  <title>FACTUM — Cyfrowy Asystent Ocen Okresowych | Służba Cywilna (HackNation 2026)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./css/styles.css">
 </head>
 <body>
 
   <header class="topbar">
     <div class="topbar-brand">
-      <span>Cyfrowy Asystent Ocen Okresowych</span>
-      <span class="badge-year">Służba Cywilna &bull; HackNation 2026</span>
-      <span id="mock-mode-badge" class="badge-year badge-mock hidden">Tryb podglądu UI (bez backendu)</span>
+      <div class="brand-lockup">
+        <span class="brand-name">FACTUM</span>
+        <span class="brand-subtitle">Cyfrowy Asystent Ocen Okresowych</span>
+      </div>
+      <div class="brand-badges">
+        <span class="brand-pill">Służba Cywilna &bull; HackNation 2026</span>
+        <span id="mock-mode-badge" class="badge-year badge-mock hidden">Tryb podglądu UI (bez backendu)</span>
+      </div>
     </div>
     <div class="topbar-controls">
-      <label for="quick-role-select">Przełącz rolę (Demo):</label>
-      <select id="quick-role-select"></select>
-      <button id="btn-reset-mock" class="btn btn-sm hidden" type="button">Resetuj dane demo</button>
-      <button id="btn-logout" class="btn btn-sm hidden" type="button">Ekran startowy</button>
+      <div class="role-switcher">
+        <label for="quick-role-select">Przełącz rolę (Demo):</label>
+        <select id="quick-role-select"></select>
+      </div>
+      <button id="btn-reset-mock" class="btn btn-sm btn-topbar hidden" type="button">Resetuj dane demo</button>
+      <button id="btn-logout" class="btn btn-sm btn-topbar hidden" type="button">Ekran startowy</button>
     </div>
   </header>
 
@@ -29,7 +36,7 @@
 
     <section id="section-login">
       <div class="card">
-        <h1>Cyfrowy Asystent Ocen Okresowych w Służbie Cywilnej</h1>
+        <h1>FACTUM — Cyfrowy Asystent Ocen Okresowych w Służbie Cywilnej</h1>
         <p class="text-muted" style="margin-bottom: 18px;">
           Wybierz jedną z ról demonstracyjnych poniżej (bez hasła), aby przetestować cały obieg oceny okresowej — od rozmowy wstępnej i dziennika tagów, przez zdarzenia kadrowe i kreator oceny ze „Split Screenem” uzasadnienia, aż po dwustronne e-podpisy i rozpatrywanie odwołań.
         </p>
